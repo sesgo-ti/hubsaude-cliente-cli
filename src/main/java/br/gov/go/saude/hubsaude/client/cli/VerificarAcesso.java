@@ -26,7 +26,7 @@ import br.gov.go.saude.hubsaude.client.SmartTokenClientBuilder;
  *     -Dexec.args="--client-id=hs-XXXXXXXX --key=chave.pem --cert=cert.pem"
  *
  * # Via JAR executável (fat JAR com todas as dependências)
- * java -jar hubsaude-cliente-java-X.Y.Z-cli.jar \
+ * java -jar hubsaude-cliente-cli-X.Y.Z.jar \
  *     --client-id=hs-XXXXXXXX --key=chave.pem --cert=cert.pem
  * }</pre>
  *
@@ -317,7 +317,7 @@ public final class VerificarAcesso {
         System.out.println("Verifica se o credenciamento foi aprovado obtendo um token de acesso.");
         System.out.println();
         System.out.println(ANSI_BOLD + "USO:" + ANSI_RESET);
-        System.out.println("  java -jar hubsaude-cliente-java-X.Y.Z-cli.jar \\");
+        System.out.println("  java -jar hubsaude-cliente-cli-X.Y.Z.jar \\");
         System.out.println("      --client-id=<ID> --key=<CHAVE.PEM> --cert=<CERT.PEM> [opções]");
         System.out.println();
         System.out.println(ANSI_BOLD + "PARÂMETROS OBRIGATÓRIOS:" + ANSI_RESET);
@@ -344,13 +344,13 @@ public final class VerificarAcesso {
         System.out.println(ANSI_BOLD + "EXEMPLOS:" + ANSI_RESET);
         System.out.println();
         System.out.println("  # Verificação básica (descoberta automática de endpoint)");
-        System.out.println("  java -jar hubsaude-cliente-java-0.0.0-SNAPSHOT-cli.jar \\");
+        System.out.println("  java -jar hubsaude-cliente-cli-0.0.0-SNAPSHOT.jar \\");
         System.out.println("      --client-id=hs-12345678 \\");
         System.out.println("      --key=minha-chave.pem \\");
         System.out.println("      --cert=meu-certificado.pem");
         System.out.println();
         System.out.println("  # Com endpoint explícito, TLS 1.2 e algoritmo RS256");
-        System.out.println("  java -jar hubsaude-cliente-java-0.0.0-SNAPSHOT-cli.jar \\");
+        System.out.println("  java -jar hubsaude-cliente-cli-0.0.0-SNAPSHOT.jar \\");
         System.out.println("      --client-id=hs-12345678 \\");
         System.out.println("      --key=minha-chave.pem \\");
         System.out.println("      --cert=meu-certificado.pem \\");
