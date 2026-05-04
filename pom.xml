@@ -83,14 +83,19 @@
                     </excludes>
                 </configuration>
                 <executions>
+                    <!--
+                        CLI interativo, não testável automaticamente:
+                        desativa a verificação de cobertura (jacoco:check)
+                        ligando-a à fase 'none'. Não basta usar <skip>true</skip>
+                        porque o parâmetro obrigatório 'rules' do goal 'check'
+                        é validado pelo Maven antes do execute().
+                    -->
                     <execution>
                         <id>jacoco-check</id>
+                        <phase>none</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
-                        <configuration>
-                            <skip>true</skip>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
