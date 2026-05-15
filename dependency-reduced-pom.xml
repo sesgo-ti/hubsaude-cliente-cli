@@ -74,15 +74,6 @@
       </plugin>
     </plugins>
   </build>
-  <repositories>
-    <repository>
-      <releases />
-      <snapshots />
-      <id>github-hubsaude</id>
-      <name>GitHub Packages - HubSaúde</name>
-      <url>https://maven.pkg.github.com/FabricaDeSoftwareINF/server-hubsaude</url>
-    </repository>
-  </repositories>
   <dependencies>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

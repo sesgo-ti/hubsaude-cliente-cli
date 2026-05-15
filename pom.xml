@@ -27,21 +27,6 @@
         </developer>
     </developers>
 
-    <!-- Repositório para resolver o parent quando não está em .m2 local -->
-    <repositories>
-        <repository>
-            <id>github-hubsaude</id>
-            <name>GitHub Packages - HubSaúde</name>
-            <url>https://maven.pkg.github.com/FabricaDeSoftwareINF/server-hubsaude</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
     <dependencies>
         <!-- Biblioteca cliente: contém SmartTokenClient e demais classes -->
         <dependency>
