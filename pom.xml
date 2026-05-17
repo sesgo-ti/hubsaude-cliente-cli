@@ -12,6 +12,7 @@
     </parent>
 
     <artifactId>hubsaude-cliente-cli</artifactId>
+    <version>0.1.3-SNAPSHOT</version>
     <name>HubSaúde Cliente CLI</name>
     <description>Ferramenta de linha de comando para verificação de acesso ao HubSaúde (pós-credenciamento), utilizando a biblioteca hubsaude-cliente-java.</description>
     <url>https://github.com/FabricaDeSoftwareINF/server-hubsaude</url>
