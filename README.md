@@ -7,15 +7,13 @@
 
 Ferramenta de conveniência para verificar que a obtenção de token de acesso ao HubSaúde via SMART Backend Services pode ser realizada de forma satisfatória. Não se destina ao uso operacional para obter tokens — o sucesso da verificação evidencia que o credenciamento foi concluído corretamente e que a requisição e emissão do token funcionam como esperado.
 
-> Para uso programático (chamada da biblioteca em código Java), consulte [`hubsaude-cliente-java`](../hubsaude-cliente-java).
-
----
+> Usa [`hubsaude-cliente-java`](../hubsaude-cliente-java) para obtenção do token de acesso.
 
 ## Quando usar
 
 Após o credenciamento ser aprovado (o pedido é feito pelo Sistema Ganesha), use esta ferramenta para confirmar de forma rápida, sem escrever código, que o acesso ao HubSaúde está funcionando com a sua chave privada e certificado.
 
----
+
 
 ## Build
 
@@ -31,9 +29,6 @@ Gera o fat-jar executável em:
 target/hubsaude-cliente-cli-0.1.5.jar
 ```
 
-**Requisitos:** Java 21+, Maven 3.9+.
-
----
 
 ## Uso
 
