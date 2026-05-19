@@ -102,6 +102,50 @@ Para detalhes de geração e conversão de chaves/certificados (PEM, PKCS#12, PK
 
 ---
 
+## Release (publicação no GitHub Packages)
+
+A publicação é automatizada pelo workflow [`.github/workflows/hubsaude-cliente-cli-release.yml`](../../../.github/workflows/hubsaude-cliente-cli-release.yml) e é **disparada por tag** com o padrão `cliente-cli-v<MAJOR>.<MINOR>.<PATCH>` (convenção ADR-33). A versão publicada é derivada da tag — o `<version>` do `pom.xml` é sobrescrito apenas durante a execução do workflow (sem commit no repositório).
+
+**Pré-requisitos:**
+
+1. `main` (ou branch alvo) verde no workflow [`hubsaude-cliente-cli-tests.yml`](../../../.github/workflows/hubsaude-cliente-cli-tests.yml).
+2. Versão da dependência `hubsaude-cliente-java` no [`pom.xml`](pom.xml) apontando para uma release já publicada no GitHub Packages.
+3. Permissão de `packages:write` no repositório (já concedida ao `GITHUB_TOKEN` do workflow).
+
+**Passos para publicar uma nova versão (ex.: `0.1.5`):**
+
+```bash
+# 1. Garanta que está na branch alvo, sincronizada com o remoto
+git checkout main
+git pull --ff-only
+
+# 2. Crie a tag semver com o prefixo cliente-cli-v
+git tag -a cliente-cli-v0.1.5 -m "Release hubsaude-cliente-cli 0.1.5"
+
+# 3. Empurre a tag para disparar o workflow de release
+git push origin cliente-cli-v0.1.5
+```
+
+Acompanhe a execução em **Actions → hubsaude-cliente-cli-release** no GitHub. Ao final, o artefato estará disponível em:
+
+```
+https://maven.pkg.github.com/FabricaDeSoftwareINF/server-hubsaude
+   br.gov.go.saude.hubsaude:hubsaude-cliente-cli:0.1.5
+```
+
+**Disparo manual (excepcional, para testes):** use *Run workflow* na aba Actions informando a versão (ex.: `0.1.5-SNAPSHOT`).
+
+**Reverter uma tag publicada por engano:**
+
+```bash
+git push --delete origin cliente-cli-v0.1.5   # remove a tag remota
+git tag -d cliente-cli-v0.1.5                 # remove a tag local
+```
+
+> O pacote já publicado no GitHub Packages permanece — remova-o manualmente em *Packages → hubsaude-cliente-cli* se necessário.
+
+---
+
 ## Licença
 
 Copyright (c) 2026 SES-GO / UFG. Todos os direitos reservados.
