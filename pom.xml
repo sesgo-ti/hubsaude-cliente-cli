@@ -7,12 +7,12 @@
     <parent>
         <groupId>br.gov.go.saude.hubsaude</groupId>
         <artifactId>hubsaude-parent</artifactId>
-        <version>0.1.4</version>
+        <version>0.1.6</version>
         <relativePath />
     </parent>
 
     <artifactId>hubsaude-cliente-cli</artifactId>
-    <version>0.1.5</version>
+    <version>0.1.6</version>
     <name>HubSaúde Cliente CLI</name>
     <description>Ferramenta de linha de comando para verificação de acesso ao HubSaúde (pós-credenciamento), utilizando a biblioteca hubsaude-cliente-java.</description>
     <url>https://github.com/FabricaDeSoftwareINF/server-hubsaude</url>
@@ -33,7 +33,7 @@
         <dependency>
             <groupId>br.gov.go.saude.hubsaude</groupId>
             <artifactId>hubsaude-cliente-java</artifactId>
-            <version>0.1.5</version>
+            <version>0.1.6</version>
         </dependency>
 
         <!-- SLF4J Simple: implementação minimalista para CLI -->
