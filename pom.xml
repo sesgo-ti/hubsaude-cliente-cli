@@ -12,7 +12,7 @@
     </parent>
 
     <artifactId>hubsaude-cliente-cli</artifactId>
-    <version>0.1.7-SNAPSHOT</version>
+    <version>0.1.8-SNAPSHOT</version>
 
     <name>HubSaúde Cliente CLI</name>
     <description>Ferramenta de linha de comando para verificação de acesso ao 
