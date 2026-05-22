@@ -101,6 +101,20 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <!--
+                                spring-boot-configuration-processor é
+                                herdado de hubsaude-parent como annotation
+                                processor (gera metadados de @ConfigurationProperties
+                                para IDEs). O cliente-cli não é Spring Boot
+                                e não consome esse jar em runtime; excluído
+                                do uber-jar para evitar ~200KB de classes
+                                inúteis e múltiplos overlaps de recursos.
+                            -->
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>org.springframework.boot:spring-boot-configuration-processor</exclude>
+                                </excludes>
+                            </artifactSet>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>br.gov.go.saude.hubsaude.client.cli.VerificarAcesso</mainClass>
