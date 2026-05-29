@@ -7,12 +7,12 @@
     <parent>
         <groupId>br.gov.go.saude.hubsaude</groupId>
         <artifactId>hubsaude-parent</artifactId>
-        <version>0.1.12</version>
+        <version>0.2.1</version>
         <relativePath />
     </parent>
 
     <artifactId>hubsaude-cliente-cli</artifactId>
-    <version>0.1.8-SNAPSHOT</version>
+    <version>0.1.9-SNAPSHOT</version>
 
     <name>HubSaúde Cliente CLI</name>
     <description>Ferramenta de linha de comando para verificação de acesso ao 
@@ -43,7 +43,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>2.0.17</version>
         </dependency>
 
         <!-- Testes -->

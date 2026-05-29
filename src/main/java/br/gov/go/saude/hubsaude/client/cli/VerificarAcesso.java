@@ -182,11 +182,22 @@ public final class VerificarAcesso {
         try {
             final String[] parts = token.split("\\.");
             if (parts.length >= 2) {
-                final String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
-                final String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+                final String headerJson = new String(
+                        Base64.getUrlDecoder().decode(parts[0]),
+                        StandardCharsets.UTF_8);
+                final String payloadJson = new String(
+                        Base64.getUrlDecoder().decode(parts[1]),
+                        StandardCharsets.UTF_8);
 
-                System.out.println("  Header:  " + headerJson);
-                System.out.println("  Payload: " + payloadJson);
+                System.out.println();
+                System.out.println("  Header:");
+                System.out.print(JwtPayloadFormatter
+                        .formatAsTable(headerJson, "    "));
+
+                System.out.println();
+                System.out.println("  Payload:");
+                System.out.print(JwtPayloadFormatter
+                        .formatAsTable(payloadJson, "    "));
             }
         } catch (Exception e) {
             System.out.println("  (Não foi possível decodificar o token)");
@@ -194,9 +205,9 @@ public final class VerificarAcesso {
 
         System.out.println();
         System.out.println("  Token completo:");
-        // Quebra o token em linhas de 80 caracteres para melhor visualização
         for (int i = 0; i < token.length(); i += TOKEN_LINE_WIDTH) {
-            System.out.println("    " + token.substring(i, Math.min(i + TOKEN_LINE_WIDTH, token.length())));
+            System.out.println("    " + token.substring(i,
+                    Math.min(i + TOKEN_LINE_WIDTH, token.length())));
         }
     }
 
