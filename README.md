@@ -9,9 +9,11 @@ Ferramenta de conveniência para verificar que a obtenção de token de acesso a
 
 > Usa [`hubsaude-cliente-java`](../hubsaude-cliente-java) para obtenção do token de acesso.
 
+> **Caminho recomendado:** para o caso comum — chave privada de **software** (PEM, PEM cifrado ou PKCS#12) — prefira o `hubsaude auth verify` do [`hubsaude-cli`](../hubsaude-cli), que faz a mesma verificação **sem exigir Java instalado** (binário único Go, início instantâneo). Esta ferramenta (`hubsaude-cliente-cli`) permanece como verificador de **nicho** para fontes de chave **não-exportáveis** — HSM/PKCS#11 e OpenBao — que dependem do SDK Java e ficam fora do escopo do CLI nativo (ver ADR-CLI-19 da spec do hubsaude-cli).
+
 ## Quando usar
 
-Após o credenciamento ser aprovado (o pedido é feito pelo Sistema Ganesha), use esta ferramenta para confirmar de forma rápida, sem escrever código, que o acesso ao HubSaúde está funcionando com a sua chave privada e certificado.
+Após o credenciamento ser aprovado (o pedido é feito pelo Sistema Ganesha), use esta ferramenta para confirmar de forma rápida, sem escrever código, que o acesso ao HubSaúde está funcionando com a sua chave privada e certificado — em especial quando a chave residir em **HSM/PKCS#11** ou em **cofre (OpenBao)**. Para chaves de software (PEM/PKCS#12), o caminho mais simples é `hubsaude auth verify`.
 
 
 
