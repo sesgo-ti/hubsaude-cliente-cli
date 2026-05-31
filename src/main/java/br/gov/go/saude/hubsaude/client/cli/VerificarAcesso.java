@@ -179,7 +179,7 @@ public final class VerificarAcesso {
         }
 
         System.out.println();
-        printSuccess("✓ Credenciamento verificado. Acesso ao HubSaúde está funcionando.");
+        printSuccess("Credenciamento verificado. Acesso ao HubSaúde está funcionando.");
     }
 
     /**
@@ -417,15 +417,15 @@ public final class VerificarAcesso {
     }
 
     private static void printInfo(final String message) {
-        System.out.println(ANSI_YELLOW + "ℹ " + message + ANSI_RESET);
+        System.out.println(ANSI_YELLOW + "[i] " + message + ANSI_RESET);
     }
 
     private static void printSuccess(final String message) {
-        System.out.println(ANSI_GREEN + "✓ " + message + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "[OK] " + message + ANSI_RESET);
     }
 
     private static void printError(final String message) {
-        System.err.println(ANSI_RED + "✗ " + message + ANSI_RESET);
+        System.err.println(ANSI_RED + "[X] " + message + ANSI_RESET);
     }
 
     /**
