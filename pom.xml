@@ -36,7 +36,7 @@
         <dependency>
             <groupId>br.gov.go.saude.hubsaude</groupId>
             <artifactId>hubsaude-cliente-java</artifactId>
-            <version>0.1.8</version>
+            <version>0.1.9</version>
         </dependency>
 
         <!-- SLF4J Simple: implementação minimalista para CLI -->
