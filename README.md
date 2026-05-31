@@ -41,12 +41,13 @@ java -jar hubsaude-cliente-cli-0.1.5.jar \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem
 
-# Com detalhes do token
+# Saída padrão já inclui os detalhes do token.
+# Use --quiet para ocultá-los:
 java -jar hubsaude-cliente-cli-0.1.5.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem \
-    --verbose
+    --quiet
 ```
 
 **Saída esperada (sucesso):**
@@ -91,7 +92,7 @@ java -jar hubsaude-cliente-cli-0.1.5.jar \
 | `--tls`        | Protocolo TLS: `TLSv1.3` ou `TLSv1.2` (padrão: `TLSv1.3`)                  | Não         |
 | `--alg`        | Algoritmo JWT: `RS256`, `RS384`, `RS512`, `PS256`, etc. (padrão: `RS256`)  | Não         |
 | `--trust`      | Certificado PEM do servidor (trust anchor, para simulador/homologação)     | Não         |
-| `--verbose`    | Mostra detalhes do token obtido                                            | Não         |
+| `--quiet`      | Oculta os detalhes do token (exibidos por padrão)                          | Não         |
 
 ---
 

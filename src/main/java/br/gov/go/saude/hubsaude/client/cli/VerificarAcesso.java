@@ -42,7 +42,7 @@ import br.gov.go.saude.hubsaude.client.SmartTokenClientBuilder;
  *   <li>{@code --tls} — Protocolo TLS: TLSv1.3 ou TLSv1.2 (opcional, padrão: TLSv1.3)</li>
  *   <li>{@code --alg} — Algoritmo JWT: RS256, RS384, RS512, PS256, etc. (opcional, padrão: RS256)</li>
  *   <li>{@code --trust} — Caminho para certificado PEM do servidor (trust anchor), para simulador/homologação</li>
- *   <li>{@code --verbose} — Mostra detalhes do token obtido</li>
+ *   <li>{@code --quiet} — Oculta os detalhes do token (por padrão são exibidos)</li>
  * </ul>
  */
 // PMD.GodClass: TODO débito técnico — extrair parsing de argumentos, IO e
@@ -90,7 +90,7 @@ public final class VerificarAcesso {
             System.exit(1);
         } catch (Exception e) {
             printError("Falha ao obter token: " + e.getMessage());
-            if (hasFlag(args, "--verbose", "-v")) {
+            if (!hasFlag(args, "--quiet", "-q")) {
                 e.printStackTrace();
             }
             System.exit(1);
@@ -152,27 +152,67 @@ public final class VerificarAcesso {
         printInfo("Obtendo token de acesso...");
         final Instant start = Instant.now();
 
-        final String token = client.obtainToken(config.scope);
+        final SmartTokenClient.TokenResponse resposta =
+                client.obtainTokenResponse(config.scope);
+        final String token = resposta.accessToken();
 
         final Duration elapsed = Duration.between(start, Instant.now());
 
         // Sucesso!
         printSuccess("Token obtido com sucesso!");
         System.out.println();
+
+        if (!config.quiet) {
+            printKeycloakResponse(resposta.rawJson());
+        }
+
         System.out.println("  Tempo de resposta: " + elapsed.toMillis() + "ms");
 
-        if (config.verbose) {
-            printTokenDetails(token);
-        } else {
+        if (config.quiet) {
             final String preview = token.substring(0,
                     Math.min(TOKEN_PREVIEW_CHARS, token.length()));
             System.out.println("  Token (primeiros " + TOKEN_PREVIEW_CHARS + " chars): " + preview + "...");
             System.out.println();
-            printInfo("Use --verbose para ver detalhes do token.");
+            printInfo("Omita --quiet para ver detalhes do token.");
+        } else {
+            printTokenDetails(token);
         }
 
         System.out.println();
         printSuccess("✓ Credenciamento verificado. Acesso ao HubSaúde está funcionando.");
+    }
+
+    /**
+     * Exibe, no mesmo formato de tabela usado para o JWT, o corpo JSON da
+     * resposta do servidor de autorização (Keycloak). O valor de
+     * {@code access_token} (e de outros segredos, se presentes) é substituído
+     * por um placeholder para não vazar o token na saída.
+     *
+     * @param rawJson corpo JSON cru da resposta; pode ser {@code null} quando
+     *                o token foi servido a partir do cache
+     */
+    private static void printKeycloakResponse(final String rawJson) {
+        if (rawJson == null || rawJson.isBlank()) {
+            return;
+        }
+        printInfo("Resposta do servidor de autorização (Keycloak):");
+        System.out.println();
+        System.out.print(JwtPayloadFormatter
+                .formatAsTable(redactSecrets(rawJson), "    "));
+        System.out.println();
+    }
+
+    /**
+     * Substitui os valores de campos sensíveis ({@code access_token},
+     * {@code refresh_token}, {@code id_token}) por um placeholder.
+     *
+     * @param json JSON original
+     * @return JSON com os segredos redigidos
+     */
+    private static String redactSecrets(final String json) {
+        return json.replaceAll(
+                "(\"(?:access_token|refresh_token|id_token)\"\\s*:\\s*\")[^\"]*\"",
+                "$1<REDACTED>\"");
     }
 
     private static void printTokenDetails(final String token) {
@@ -259,8 +299,8 @@ public final class VerificarAcesso {
             config.jwtAlgorithm = extractValue(arg, "--alg=").toUpperCase(java.util.Locale.ROOT);
         } else if (arg.startsWith("--trust=")) {
             config.trustAnchorPath = extractValue(arg, "--trust=");
-        } else if ("--verbose".equals(arg) || "-v".equals(arg)) {
-            config.verbose = true;
+        } else if ("--quiet".equals(arg) || "-q".equals(arg)) {
+            config.quiet = true;
         } else if (!"--help".equals(arg) && !"-h".equals(arg)) {
             throw new IllegalArgumentException("Argumento desconhecido: " + arg);
         }
@@ -349,7 +389,7 @@ public final class VerificarAcesso {
                 + DEFAULT_ALG + ")");
         System.out.println("  --trust=<PATH>        Certificado PEM do servidor "
                 + "(trust anchor, para simulador/homologação)");
-        System.out.println("  --verbose, -v         Mostra detalhes do token obtido");
+        System.out.println("  --quiet, -q           Oculta os detalhes do token (exibidos por padrão)");
         System.out.println("  --help, -h            Exibe esta mensagem");
         System.out.println();
         System.out.println(ANSI_BOLD + "EXEMPLOS:" + ANSI_RESET);
@@ -368,7 +408,7 @@ public final class VerificarAcesso {
         System.out.println("      --endpoint=https://fhir.saude.go.gov.br/auth/token \\");
         System.out.println("      --alg=RS256 \\");
         System.out.println("      --tls=TLSv1.2 \\");
-        System.out.println("      --verbose");
+        System.out.println("      --quiet");
         System.out.println();
         System.out.println(ANSI_BOLD + "CÓDIGOS DE SAÍDA:" + ANSI_RESET);
         System.out.println("  0  Sucesso - token obtido, credenciamento OK");
@@ -404,6 +444,6 @@ public final class VerificarAcesso {
         String tlsProtocol = DEFAULT_TLS;
         String jwtAlgorithm = DEFAULT_ALG;
         String trustAnchorPath;
-        boolean verbose;
+        boolean quiet;
     }
 }
