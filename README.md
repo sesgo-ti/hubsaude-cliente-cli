@@ -2,7 +2,7 @@
 
 [![Java 21+](https://img.shields.io/badge/Java-21%2B-blue)](https://openjdk.org/)
 [![Maven](https://img.shields.io/badge/Maven-3.9%2B-orange)](https://maven.apache.org/)
-[![Version](https://img.shields.io/badge/Version-0.1.5-yellow)](https://github.com/FabricaDeSoftwareINF/server-hubsaude)
+[![Version](https://img.shields.io/badge/Version-0.3.0-yellow)](https://github.com/FabricaDeSoftwareINF/server-hubsaude)
 [![License](https://img.shields.io/badge/License-SES--GO%2FUFG-green)](#licença)
 
 Ferramenta de conveniência para verificar que a obtenção de token de acesso ao HubSaúde via SMART Backend Services pode ser realizada de forma satisfatória. 
@@ -11,11 +11,11 @@ Não se destina ao uso operacional para obter tokens — o sucesso da verificaç
 
 > Usa [`hubsaude-cliente-java`](../hubsaude-cliente-java) para obtenção do token de acesso.
 
-> **Caminho recomendado:** para o caso comum — chave privada de **software** (PEM, PEM cifrado ou PKCS#12) — prefira o `hubsaude auth verify` do [`hubsaude-cli`](../hubsaude-cli), que faz a mesma verificação **sem exigir Java instalado** (binário único Go, início instantâneo). Esta ferramenta (`hubsaude-cliente-cli`) permanece como verificador de **nicho** para fontes de chave **não-exportáveis** — HSM/PKCS#11 e OpenBao — que dependem do SDK Java e ficam fora do escopo do CLI nativo (ver ADR-CLI-19 da spec do hubsaude-cli).
+> **Alternativa sem Java:** a mesma verificação pode ser feita com o `hubsaude auth verify` do [`hubsaude-cli`](../hubsaude-cli) — binário único (Go), **sem exigir Java instalado** e com início instantâneo.
 
 ## Quando usar
 
-Após o credenciamento ser aprovado (o pedido é feito pelo Sistema Ganesha), use esta ferramenta para confirmar de forma rápida, sem escrever código, que o acesso ao HubSaúde está funcionando com a sua chave privada e certificado — em especial quando a chave residir em **HSM/PKCS#11** ou em **cofre (OpenBao)**. Para chaves de software (PEM/PKCS#12), o caminho mais simples é `hubsaude auth verify`.
+Após o credenciamento ser aprovado (o pedido é feito pelo Sistema Ganesha), use esta ferramenta para confirmar de forma rápida, sem escrever código, que o acesso ao HubSaúde está funcionando com a sua chave privada e certificado em arquivos PEM.
 
 
 
@@ -36,15 +36,24 @@ target/hubsaude-cliente-cli-0.1.5.jar
 
 ## Uso
 
+> A CLI recebe a chave privada e o certificado como arquivos **PEM** (chave em
+> claro ou cifrada com `--password`).
+
+### Verificação básica
+
+Descoberta automática do endpoint via `.well-known/smart-configuration` a partir
+da base FHIR padrão (`https://hub.saude.go.gov.br`):
+
 ```bash
-# Verificação básica
 java -jar hubsaude-cliente-cli-0.1.5.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem
+```
 
-# Saída padrão já inclui os detalhes do token.
-# Use --quiet para ocultá-los:
+Por padrão a saída inclui os detalhes do token. Use `--quiet` para ocultá-los:
+
+```bash
 java -jar hubsaude-cliente-cli-0.1.5.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
@@ -52,31 +61,120 @@ java -jar hubsaude-cliente-cli-0.1.5.jar \
     --quiet
 ```
 
-**Saída esperada (sucesso):**
+### Endpoint explícito e *scope* específico
+
+Aponta diretamente ao servidor de autorização (desabilitando a descoberta) e
+solicita um *scope* diferente do padrão `system/Patient.rs` — útil, por exemplo,
+contra um ambiente de *staging*:
+
+```bash
+java -jar hubsaude-cliente-cli-0.1.5.jar \
+    --client-id=hs-12345678 \
+    --key=minha-chave.pem \
+    --cert=meu-certificado.pem \
+    --endpoint=https://auth.staging.saude.go.gov.br/realms/hub/protocol/openid-connect/token \
+    --scope=system/Observation.rs
+```
+
+### Chave PEM cifrada
+
+Informe a senha com `--password`. Se a chave estiver cifrada e `--password` for
+omitido, a senha é solicitada interativamente no terminal:
+
+```bash
+java -jar hubsaude-cliente-cli-0.1.5.jar \
+    --client-id=hs-12345678 \
+    --key=chave-encrypted.pem \
+    --cert=meu-certificado.pem \
+    --password=senha-da-chave
+```
+
+### Homologação/simulador com CA interna
+
+Forneça o *trust anchor* do servidor com `--trust` (e, se necessário, fixe o
+protocolo TLS). Em produção a CA do HubSaúde já está no *trust store* da JVM e
+esta opção é desnecessária:
+
+```bash
+java -jar hubsaude-cliente-cli-0.1.5.jar \
+    --client-id=hs-12345678 \
+    --key=minha-chave.pem \
+    --cert=meu-certificado.pem \
+    --trust=ca-homologacao.pem \
+    --tls=TLSv1.2
+```
+
+### Execução em desenvolvimento (Maven)
+
+Sem empacotar o fat-jar, a partir do diretório do projeto
+(`projetos/hubsaude-cliente-cli`):
+
+```bash
+mvn exec:java \
+    -Dexec.mainClass="br.gov.go.saude.hubsaude.client.cli.VerificarAcesso" \
+    -Dexec.args="--client-id=hs-12345678 --key=minha-chave.pem --cert=meu-certificado.pem"
+```
+
+**Saída esperada (modo `--quiet`):**
 
 ```
 ╔═══════════════════════════════════════════════════════════╗
 ║     HubSaúde - Verificador de Acesso (Pós-Credenciamento) ║
 ╚═══════════════════════════════════════════════════════════╝
 
-ℹ Configuração:
+[i] Configuração:
   Client ID:  hs-12345678
   Chave:      minha-chave.pem
   Certificado:meu-certificado.pem
   Scope:      system/Patient.rs
   TLS:        TLSv1.3
   Algoritmo:  RS256
-  FHIR Base:  https://fhir.saude.go.gov.br
-  Endpoint:   https://fhir.saude.go.gov.br/auth/token (descoberto via .well-known)
+  FHIR Base:  https://hub.saude.go.gov.br
+  Endpoint:   https://hub.saude.go.gov.br/auth/token (descoberto via .well-known)
 
-ℹ Obtendo token de acesso...
-✓ Token obtido com sucesso!
+[i] Obtendo token de acesso...
+[OK] Token obtido com sucesso!
 
   Tempo de resposta: 245ms
   Token (primeiros 50 chars): eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOi...
+[i] Omita --quiet para ver detalhes do token.
 
-✓ Credenciamento verificado. Acesso ao HubSaúde está funcionando.
+[OK] Credenciamento verificado. Acesso ao HubSaúde está funcionando.
 ```
+
+Sem `--quiet` (padrão), no lugar do *preview* de 50 caracteres são exibidos a
+resposta do servidor de autorização e as tabelas do *header*/*payload* do JWT.
+
+---
+
+## Diagnóstico de falhas
+
+Em caso de erro, a ferramenta imprime uma mensagem prefixada por `[X]` em
+`stderr` e encerra com **código de saída 1**. Há duas categorias:
+
+- **Erro de configuração** — arquivo ausente/ilegível, argumento desconhecido ou
+  parâmetro obrigatório faltando:
+
+  ```
+  [X] Erro de configuração: Chave privada não encontrado: minha-chave.pem
+  ```
+
+- **Falha ao obter token** — credenciamento não aprovado, `client-id` inválido,
+  problema de TLS/CA ou conectividade. Sem `--quiet`, o *stack trace* é exibido
+  para facilitar o diagnóstico:
+
+  ```
+  [X] Falha ao obter token: <detalhe da causa>
+  ```
+
+  (o texto após os dois-pontos varia conforme a causa)
+
+### Códigos de saída
+
+| Código | Significado                                      |
+| ------ | ------------------------------------------------ |
+| `0`    | Sucesso — token obtido, credenciamento OK        |
+| `1`    | Falha — erro de configuração ou acesso negado    |
 
 ---
 
@@ -100,7 +198,7 @@ java -jar hubsaude-cliente-cli-0.1.5.jar \
 
 ## Preparação de chave e certificado
 
-Para detalhes de geração e conversão de chaves/certificados (PEM, PKCS#12, PKCS#11/HSM, ICP-Brasil), consulte o README da biblioteca: [`hubsaude-cliente-java/README.md`](../hubsaude-cliente-java/README.md).
+Para detalhes de geração e conversão de chaves/certificados (PEM, PKCS#12, ICP-Brasil), consulte o README da biblioteca: [`hubsaude-cliente-java/README.md`](../hubsaude-cliente-java/README.md).
 
 ---
 
