@@ -30,8 +30,12 @@ mvn clean package
 Gera o fat-jar executável em:
 
 ```
-target/hubsaude-cliente-cli-0.1.5.jar
+target/hubsaude-cliente-cli-0.3.0-SNAPSHOT.jar
 ```
+
+> Os exemplos da seção **Uso** referenciam o nome da release publicada
+> (`hubsaude-cliente-cli-0.3.0.jar`); o build local produz o artefato com
+> sufixo `-SNAPSHOT`. Ajuste o nome conforme o jar que você possui.
 
 
 ## Uso
@@ -45,7 +49,7 @@ Descoberta automática do endpoint via `.well-known/smart-configuration` a parti
 da base FHIR padrão (`https://hub.saude.go.gov.br`):
 
 ```bash
-java -jar hubsaude-cliente-cli-0.1.5.jar \
+java -jar hubsaude-cliente-cli-0.3.0.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem
@@ -54,7 +58,7 @@ java -jar hubsaude-cliente-cli-0.1.5.jar \
 Por padrão a saída inclui os detalhes do token. Use `--quiet` para ocultá-los:
 
 ```bash
-java -jar hubsaude-cliente-cli-0.1.5.jar \
+java -jar hubsaude-cliente-cli-0.3.0.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem \
@@ -68,7 +72,7 @@ solicita um *scope* diferente do padrão `system/Patient.rs` — útil, por exem
 contra um ambiente de *staging*:
 
 ```bash
-java -jar hubsaude-cliente-cli-0.1.5.jar \
+java -jar hubsaude-cliente-cli-0.3.0.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem \
@@ -82,7 +86,7 @@ Informe a senha com `--password`. Se a chave estiver cifrada e `--password` for
 omitido, a senha é solicitada interativamente no terminal:
 
 ```bash
-java -jar hubsaude-cliente-cli-0.1.5.jar \
+java -jar hubsaude-cliente-cli-0.3.0.jar \
     --client-id=hs-12345678 \
     --key=chave-encrypted.pem \
     --cert=meu-certificado.pem \
@@ -96,7 +100,7 @@ protocolo TLS). Em produção a CA do HubSaúde já está no *trust store* da JV
 esta opção é desnecessária:
 
 ```bash
-java -jar hubsaude-cliente-cli-0.1.5.jar \
+java -jar hubsaude-cliente-cli-0.3.0.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem \
@@ -212,7 +216,7 @@ A publicação é automatizada pelo workflow [`.github/workflows/hubsaude-client
 2. Versão da dependência `hubsaude-cliente-java` no [`pom.xml`](pom.xml) apontando para uma release já publicada no GitHub Packages.
 3. Permissão de `packages:write` no repositório (já concedida ao `GITHUB_TOKEN` do workflow).
 
-**Passos para publicar uma nova versão (ex.: `0.1.5`):**
+**Passos para publicar uma nova versão (ex.: `0.3.1`):**
 
 ```bash
 # 1. Garanta que está na branch alvo, sincronizada com o remoto
@@ -220,26 +224,26 @@ git checkout main
 git pull --ff-only
 
 # 2. Crie a tag semver com o prefixo cliente-cli-v
-git tag -a cliente-cli-v0.1.5 -m "Release hubsaude-cliente-cli 0.1.5"
+git tag -a cliente-cli-v0.3.1 -m "Release hubsaude-cliente-cli 0.3.1"
 
 # 3. Empurre a tag para disparar o workflow de release
-git push origin cliente-cli-v0.1.5
+git push origin cliente-cli-v0.3.1
 ```
 
 Acompanhe a execução em **Actions → hubsaude-cliente-cli-release** no GitHub. Ao final, o artefato estará disponível em:
 
 ```
 https://maven.pkg.github.com/FabricaDeSoftwareINF/server-hubsaude
-   br.gov.go.saude.hubsaude:hubsaude-cliente-cli:0.1.5
+   br.gov.go.saude.hubsaude:hubsaude-cliente-cli:0.3.1
 ```
 
-**Disparo manual (excepcional, para testes):** use *Run workflow* na aba Actions informando a versão (ex.: `0.1.5-SNAPSHOT`).
+**Disparo manual (excepcional, para testes):** use *Run workflow* na aba Actions informando a versão (ex.: `0.3.1-SNAPSHOT`).
 
 **Reverter uma tag publicada por engano:**
 
 ```bash
-git push --delete origin cliente-cli-v0.1.5   # remove a tag remota
-git tag -d cliente-cli-v0.1.5                 # remove a tag local
+git push --delete origin cliente-cli-v0.3.1   # remove a tag remota
+git tag -d cliente-cli-v0.3.1                 # remove a tag local
 ```
 
 > O pacote já publicado no GitHub Packages permanece — remova-o manualmente em *Packages → hubsaude-cliente-cli* se necessário.
