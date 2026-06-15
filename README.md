@@ -5,7 +5,9 @@
 [![Version](https://img.shields.io/badge/Version-0.1.5-yellow)](https://github.com/FabricaDeSoftwareINF/server-hubsaude)
 [![License](https://img.shields.io/badge/License-SES--GO%2FUFG-green)](#licença)
 
-Ferramenta de conveniência para verificar que a obtenção de token de acesso ao HubSaúde via SMART Backend Services pode ser realizada de forma satisfatória. Não se destina ao uso operacional para obter tokens — o sucesso da verificação evidencia que o credenciamento foi concluído corretamente e que a requisição e emissão do token funcionam como esperado.
+Ferramenta de conveniência para verificar que a obtenção de token de acesso ao HubSaúde via SMART Backend Services pode ser realizada de forma satisfatória. 
+
+Não se destina ao uso operacional para obter tokens — o sucesso da verificação evidencia que o credenciamento foi concluído corretamente e que a requisição e emissão do token funcionam como esperado.
 
 > Usa [`hubsaude-cliente-java`](../hubsaude-cliente-java) para obtenção do token de acesso.
 
