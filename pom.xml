@@ -7,7 +7,7 @@
     <parent>
         <groupId>br.gov.go.saude.hubsaude</groupId>
         <artifactId>hubsaude-parent</artifactId>
-        <version>0.4.5</version>
+        <version>0.4.6</version>
         <relativePath />
     </parent>
 
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>br.gov.go.saude.hubsaude</groupId>
             <artifactId>hubsaude-cliente-java</artifactId>
-            <version>0.3.0</version>
+            <version>0.3.1</version>
         </dependency>
 
         <!-- SLF4J Simple: implementação minimalista para CLI -->
