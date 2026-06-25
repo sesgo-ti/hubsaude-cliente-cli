@@ -17,7 +17,6 @@
         <revision>0.3.6-SNAPSHOT</revision>
     </properties>
 
-
     <name>HubSaúde Cliente CLI</name>
     <description>Ferramenta de linha de comando para verificação de acesso ao 
         HubSaúde (pós-credenciamento), 
@@ -124,14 +123,41 @@
                                 </transformer>
                                 <!-- Merge service files (necessário para BouncyCastle) -->
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <!--
+                                    Mescla os arquivos de atribuição duplicados
+                                    (META-INF/LICENSE[.txt] e META-INF/NOTICE) de
+                                    SLF4J/Jackson/BouncyCastle em um único recurso,
+                                    eliminando os WARNINGs de "overlapping resource"
+                                    sem perder a atribuição de licenças.
+                                -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
                             </transformers>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
+                                        <!-- Assinaturas de jars (inválidas no uber-jar) -->
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
+                                        <!--
+                                            module-info.class dos jars multi-release
+                                            (BouncyCastle, SLF4J): o uber-jar roda no
+                                            classpath, não como módulo JPMS. Remove os
+                                            WARNINGs "Discovered module-info.class" e o
+                                            overlap de META-INF/versions/9/module-info.
+                                        -->
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>META-INF/versions/*/module-info.class</exclude>
+                                        <!--
+                                            MANIFEST.MF de entrada: o ManifestResourceTransformer
+                                            gera o manifesto final; descartar os de origem
+                                            elimina o overlap de META-INF/MANIFEST.MF.
+                                        -->
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <!-- Metadados OSGi não usados pela CLI -->
+                                        <exclude>META-INF/versions/*/OSGI-INF/**</exclude>
                                     </excludes>
                                 </filter>
                             </filters>

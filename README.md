@@ -5,19 +5,28 @@
 [![Maven](https://img.shields.io/badge/Maven-3.9%2B-orange)](https://maven.apache.org/)
 [![License](https://img.shields.io/badge/License-SES--GO%2FUFG-green)](#licença)
 
-Ferramenta de conveniência para verificar que a obtenção de token de acesso ao HubSaúde via SMART Backend Services pode ser realizada de forma satisfatória. 
+Ferramenta de conveniência para verificar que a obtenção de token 
+de acesso ao HubSaúde via SMART Backend Services pode ser realizada 
+de forma satisfatória. 
 
-Não se destina ao uso operacional para obter tokens — o sucesso da verificação evidencia que o credenciamento foi concluído corretamente e que a requisição e emissão do token funcionam como esperado.
+Não se destina ao uso operacional para obter tokens. O
+sucesso da verificação apenas evidencia que o credenciamento 
+foi concluído corretamente para o certificado digital empregado
+na verificação. 
 
-> Usa [`hubsaude-cliente-java`](../hubsaude-cliente-java) para obtenção do token de acesso.
+> Usa [`hubsaude-cliente-java`](../hubsaude-cliente-java) para obtenção 
+> do token de acesso.
 
-> **Alternativa sem Java:** a mesma verificação pode ser feita com o `hubsaude auth verify` do [`hubsaude-cli`](../hubsaude-cli) — binário único (Go), **sem exigir Java instalado** e com início instantâneo.
+> **Alternativa sem Java:** a mesma verificação pode ser feita com o 
+> `hubsaude auth verify` do [`hubsaude-cli`](../hubsaude-cli) — binário 
+> único (Go), **sem exigir Java instalado** e com início instantâneo.
 
 ## Quando usar
 
-Após o credenciamento ser aprovado (o pedido é feito pelo Sistema Ganesha), use esta ferramenta para confirmar de forma rápida, sem escrever código, que o acesso ao HubSaúde está funcionando com a sua chave privada e certificado em arquivos PEM.
-
-
+Após o credenciamento ser aprovado (o pedido é feito pelo Sistema Ganesha), 
+use esta ferramenta para confirmar de forma rápida, sem escrever código, 
+que o acesso ao HubSaúde está funcionando com a sua chave privada e 
+certificado em arquivos PEM.
 
 ## Build
 
