@@ -23,6 +23,20 @@
         utilizando a biblioteca hubsaude-cliente-java.</description>
     <url>https://github.com/FabricaDeSoftwareINF/server-hubsaude</url>
 
+    <organization>
+        <name>SES-GO e UFG/INF</name>
+        <url>https://www.saude.go.gov.br</url>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>Licença Proprietária SES-GO / UFG</name>
+            <url>https://github.com/FabricaDeSoftwareINF/server-hubsaude/blob/main/LICENSE</url>
+            <distribution>manual</distribution>
+            <comments>Consulte o arquivo LICENSE na raiz do repositório.</comments>
+        </license>
+    </licenses>
+
     <developers>
         <developer>
             <name>Daniel Nogueira da Costa</name>
