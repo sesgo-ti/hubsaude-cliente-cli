@@ -2,7 +2,7 @@
 
 [![Java 21+](https://img.shields.io/badge/Java-21%2B-blue)](https://openjdk.org/)
 [![Maven](https://img.shields.io/badge/Maven-3.9%2B-orange)](https://maven.apache.org/)
-[![Version](https://img.shields.io/badge/Version-0.3.3-yellow)](https://github.com/FabricaDeSoftwareINF/server-hubsaude)
+[![Version](https://img.shields.io/badge/Version-0.3.4-yellow)](https://github.com/FabricaDeSoftwareINF/server-hubsaude)
 [![License](https://img.shields.io/badge/License-SES--GO%2FUFG-green)](#licença)
 
 Ferramenta de conveniência para verificar que a obtenção de token de acesso ao HubSaúde via SMART Backend Services pode ser realizada de forma satisfatória. 
