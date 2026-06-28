@@ -8,6 +8,8 @@ package br.gov.go.saude.hubsaude.client.cli;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Utilitário que formata Header/Payload de um JWT como tabela legível,
  * uma claim por linha. Faz parse mínimo de um objeto JSON plano,
@@ -41,6 +43,11 @@ final class JwtPayloadFormatter {
      * @param indent prefixo de indentação (ex.: "    ")
      * @return string multi-linha pronta para impressão
      */
+    @SuppressFBWarnings(
+            value = "FORMAT_STRING_MANIPULATION",
+            justification = "Largura do formato deriva apenas de maxKeyLen "
+                    + "(int interno calculado das chaves); não há entrada do "
+                    + "usuário no template de formato.")
     static String formatAsTable(final String json, final String indent) {
         final Map<String, String> fields = parseTopLevelObject(json);
         if (fields.isEmpty()) {

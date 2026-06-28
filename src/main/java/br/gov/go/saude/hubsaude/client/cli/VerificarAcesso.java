@@ -15,6 +15,7 @@ import java.util.Base64;
 
 import br.gov.go.saude.hubsaude.client.SmartTokenClient;
 import br.gov.go.saude.hubsaude.client.SmartTokenClientBuilder;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Ferramenta de linha de comando para verificar acesso ao HubSaúde após credenciamento.
@@ -74,6 +75,12 @@ public final class VerificarAcesso {
      *
      * @param args argumentos de linha de comando
      */
+    @SuppressFBWarnings(
+            value = "INFORMATION_EXPOSURE_THROUGH_AN_ERROR_MESSAGE",
+            justification = "Ferramenta de diagnóstico CLI: o stack trace só é "
+                    + "exibido em modo verbose (sem --quiet) para o próprio "
+                    + "operador, não há superfície remota; a saída destina-se "
+                    + "ao próprio operador no terminal.")
     public static void main(final String[] args) {
         printBanner();
 
@@ -100,6 +107,10 @@ public final class VerificarAcesso {
     // PMD.SignatureDeclareThrowsException: ponto de entrada CLI; loga e
     // encerra o processo no chamador.
     @SuppressWarnings("PMD.SignatureDeclareThrowsException")
+    @SuppressFBWarnings(
+            value = "THROWS_METHOD_THROWS_CLAUSE_BASIC_EXCEPTION",
+            justification = "Ponto de entrada CLI: agrega exceções do cliente "
+                    + "SMART; o chamador (main) trata e encerra o processo.")
     private static void verificarAcesso(final Config config) throws Exception {
         // Validar arquivos primeiro
         validateFile(config.keyPath, "Chave privada");
@@ -215,6 +226,10 @@ public final class VerificarAcesso {
                 "$1<REDACTED>\"");
     }
 
+    @SuppressFBWarnings(
+            value = "REC_CATCH_EXCEPTION",
+            justification = "Decodificação do JWT é best-effort para exibição; "
+                    + "qualquer falha cai no fallback amigável sem abortar.")
     private static void printTokenDetails(final String token) {
         System.out.println();
         printInfo("Detalhes do token JWT:");
@@ -329,6 +344,11 @@ public final class VerificarAcesso {
      * @return senha digitada ou null se não necessária/não disponível
      */
     @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull") // null = sem senha, não senha vazia
+    @SuppressFBWarnings(
+            value = {"PZLA_PREFER_ZERO_LENGTH_ARRAYS", "REC_CATCH_EXCEPTION"},
+            justification = "null representa 'sem senha' (semântica distinta de "
+                    + "senha vazia char[0]); o catch genérico ignora falhas de "
+                    + "leitura, tratadas adiante na validação dos arquivos.")
     private static char[] promptPasswordIfNeeded(final String keyPath) {
         try {
             final String content = Files.readString(Path.of(keyPath));
