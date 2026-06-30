@@ -215,7 +215,7 @@ Para detalhes de geração e conversão de chaves/certificados (PEM, PKCS#12, IC
 
 ---
 
-## Release (publicação no GitHub Packages)
+## Publicação de nova versão (release)
 
 A publicação é automatizada pelo workflow [`.github/workflows/hubsaude-cliente-cli-release.yml`](../../../.github/workflows/hubsaude-cliente-cli-release.yml) e é **disparada por tag** com o padrão `cliente-cli-v<MAJOR>.<MINOR>.<PATCH>` (convenção ADR-33). A versão publicada é derivada da tag — o `<version>` do `pom.xml` é sobrescrito apenas durante a execução do workflow (sem commit no repositório).
 
