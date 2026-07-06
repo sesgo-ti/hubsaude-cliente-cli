@@ -15,7 +15,7 @@
     <version>${revision}</version>
 
     <properties>
-        <revision>0.3.16-SNAPSHOT</revision>
+        <revision>0.3.17-SNAPSHOT</revision>
     </properties>
 
     <name>HubSaúde Cliente CLI</name>
@@ -54,7 +54,7 @@
         <dependency>
             <groupId>br.gov.go.saude.hubsaude</groupId>
             <artifactId>hubsaude-cliente-java</artifactId>
-            <version>0.3.11</version>
+            <version>0.3.12</version>
         </dependency>
 
         <!-- SLF4J Simple: implementação minimalista para CLI -->
