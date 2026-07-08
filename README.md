@@ -39,12 +39,13 @@ mvn clean package
 Gera o fat-jar executável em:
 
 ```
-target/hubsaude-cliente-cli-0.3.0-SNAPSHOT.jar
+target/hubsaude-cliente-cli-<versão>-SNAPSHOT.jar
 ```
 
-> Os exemplos da seção **Uso** referenciam o nome da release publicada
-> (`hubsaude-cliente-cli-0.3.0.jar`); o build local produz o artefato com
-> sufixo `-SNAPSHOT`. Ajuste o nome conforme o jar que você possui.
+> Os exemplos da seção **Uso** referenciam o nome genérico
+> `hubsaude-cliente-cli-<versão>.jar` — substitua `<versão>` pela versão do
+> jar que você possui (release publicada, ex.: `0.3.16`, ou build local com
+> sufixo `-SNAPSHOT`).
 
 
 ## Uso
@@ -58,7 +59,7 @@ Descoberta automática do endpoint via `.well-known/smart-configuration` a parti
 da base FHIR padrão (`https://hub.saude.go.gov.br`):
 
 ```bash
-java -jar hubsaude-cliente-cli-0.3.0.jar \
+java -jar hubsaude-cliente-cli-<versão>.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem
@@ -67,7 +68,7 @@ java -jar hubsaude-cliente-cli-0.3.0.jar \
 Por padrão a saída inclui os detalhes do token. Use `--quiet` para ocultá-los:
 
 ```bash
-java -jar hubsaude-cliente-cli-0.3.0.jar \
+java -jar hubsaude-cliente-cli-<versão>.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem \
@@ -81,7 +82,7 @@ solicita um *scope* diferente do padrão `system/Patient.rs` — útil, por exem
 contra um ambiente de *staging*:
 
 ```bash
-java -jar hubsaude-cliente-cli-0.3.0.jar \
+java -jar hubsaude-cliente-cli-<versão>.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem \
@@ -95,7 +96,7 @@ Informe a senha com `--password`. Se a chave estiver cifrada e `--password` for
 omitido, a senha é solicitada interativamente no terminal:
 
 ```bash
-java -jar hubsaude-cliente-cli-0.3.0.jar \
+java -jar hubsaude-cliente-cli-<versão>.jar \
     --client-id=hs-12345678 \
     --key=chave-encrypted.pem \
     --cert=meu-certificado.pem \
@@ -109,7 +110,7 @@ protocolo TLS). Em produção a CA do HubSaúde já está no *trust store* da JV
 esta opção é desnecessária:
 
 ```bash
-java -jar hubsaude-cliente-cli-0.3.0.jar \
+java -jar hubsaude-cliente-cli-<versão>.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem \
