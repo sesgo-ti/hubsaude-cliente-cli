@@ -30,7 +30,7 @@ import org.junit.jupiter.api.io.TempDir;
 class VerificarAcessoTest {
 
     private static final String[] OBRIGATORIOS = {
-        "--client-id=hs-12345678", "--key=chave.pem", "--cert=cert.pem",
+        "--client-id=hs-12345678", "--key=chave.pem", "--cert=cert.pem", "--ig=hemograma", "--ig-versao=0.0.1",
     };
 
     // ------------------------------------------------------------------
@@ -58,6 +58,56 @@ class VerificarAcessoTest {
                 .hasMessageContaining("--cert");
     }
 
+    @Test
+    void deveExigirIg() {
+        // Concern client-assertion-contexto-ig.md §3.4: o claim hub_ctx é
+        // obrigatório no client_assertion enviado ao HubSaúde.
+        assertThatThrownBy(() -> VerificarAcesso.parseArgs(
+                        "--client-id=hs-1", "--key=chave.pem", "--cert=cert.pem", "--ig-versao=0.0.1"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("--ig");
+    }
+
+    @Test
+    void deveExigirIgVersao() {
+        assertThatThrownBy(() -> VerificarAcesso.parseArgs(
+                        "--client-id=hs-1", "--key=chave.pem", "--cert=cert.pem", "--ig=hemograma"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("--ig-versao");
+    }
+
+    @Test
+    void deveRejeitarIgComFormatoInvalido() {
+        assertThatThrownBy(() -> VerificarAcesso.parseArgs(
+                        "--client-id=hs-1",
+                        "--key=chave.pem",
+                        "--cert=cert.pem",
+                        "--ig=Hemograma",
+                        "--ig-versao=0.0.1"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("--ig inválido");
+    }
+
+    @Test
+    void deveRejeitarIgVersaoIncompleta() {
+        assertThatThrownBy(() -> VerificarAcesso.parseArgs(
+                        "--client-id=hs-1", "--key=chave.pem", "--cert=cert.pem", "--ig=hemograma", "--ig-versao=1.2"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("--ig-versao inválido");
+    }
+
+    @Test
+    void deveRejeitarIgVersaoComPreRelease() {
+        assertThatThrownBy(() -> VerificarAcesso.parseArgs(
+                        "--client-id=hs-1",
+                        "--key=chave.pem",
+                        "--cert=cert.pem",
+                        "--ig=hemograma",
+                        "--ig-versao=1.2.3-rc.1"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("--ig-versao inválido");
+    }
+
     // ------------------------------------------------------------------
     // parseArgs: valores padrão e parsing de cada flag
     // ------------------------------------------------------------------
@@ -69,11 +119,15 @@ class VerificarAcessoTest {
         assertThat(config.clientId).isEqualTo("hs-12345678");
         assertThat(config.keyPath).isEqualTo("chave.pem");
         assertThat(config.certPath).isEqualTo("cert.pem");
+        assertThat(config.ig).isEqualTo("hemograma");
+        assertThat(config.igVersao).isEqualTo("0.0.1");
         assertThat(config.tokenEndpoint).isNull();
         assertThat(config.fhirBase).isEqualTo("https://hub.saude.go.gov.br");
         assertThat(config.scope).isEqualTo("system/Patient.rs");
         assertThat(config.tlsProtocol).isEqualTo("TLSv1.3");
-        assertThat(config.jwtAlgorithm).isEqualTo("RS256");
+        // Concern client-assertion-contexto-ig.md, §3.2: padrão RS384.
+        assertThat(config.jwtAlgorithm).isEqualTo("RS384");
+        assertThat(config.keyId).isNull();
         assertThat(config.trustAnchorPath).isNull();
         assertThat(config.keyPassword).isNull();
         assertThat(config.quiet).isFalse();
@@ -85,12 +139,15 @@ class VerificarAcessoTest {
                 "--client-id=hs-1",
                 "--key=k.pem",
                 "--cert=c.pem",
+                "--ig=hemograma",
+                "--ig-versao=1.2.3",
                 "--endpoint=https://auth.exemplo.gov.br/token",
                 "--fhir-base=https://fhir.exemplo.gov.br",
                 "--scope=system/Observation.rs",
                 "--password=segredo",
                 "--tls=TLSv1.2",
-                "--alg=ps256",
+                "--alg=es384",
+                "--kid=chave-2026",
                 "--trust=anchor.pem",
                 "--quiet");
 
@@ -99,31 +156,45 @@ class VerificarAcessoTest {
         assertThat(config.scope).isEqualTo("system/Observation.rs");
         assertThat(config.keyPassword).isEqualTo("segredo".toCharArray());
         assertThat(config.tlsProtocol).isEqualTo("TLSv1.2");
-        assertThat(config.jwtAlgorithm).isEqualTo("PS256");
+        assertThat(config.jwtAlgorithm).isEqualTo("ES384");
+        assertThat(config.keyId).isEqualTo("chave-2026");
+        assertThat(config.ig).isEqualTo("hemograma");
+        assertThat(config.igVersao).isEqualTo("1.2.3");
         assertThat(config.trustAnchorPath).isEqualTo("anchor.pem");
         assertThat(config.quiet).isTrue();
     }
 
     @Test
     void deveNormalizarAlgoritmoParaMaiusculas() {
-        final VerificarAcesso.Config config =
-                VerificarAcesso.parseArgs("--client-id=hs-1", "--key=k.pem", "--cert=c.pem", "--alg=rs384");
+        final VerificarAcesso.Config config = VerificarAcesso.parseArgs(
+                "--client-id=hs-1",
+                "--key=k.pem",
+                "--cert=c.pem",
+                "--ig=hemograma",
+                "--ig-versao=0.0.1",
+                "--alg=rs384");
 
         assertThat(config.jwtAlgorithm).isEqualTo("RS384");
     }
 
     @Test
     void deveReconhecerQuietNaFormaCurta() {
-        final VerificarAcesso.Config config =
-                VerificarAcesso.parseArgs("--client-id=hs-1", "--key=k.pem", "--cert=c.pem", "-q");
+        final VerificarAcesso.Config config = VerificarAcesso.parseArgs(
+                "--client-id=hs-1", "--key=k.pem", "--cert=c.pem", "--ig=hemograma", "--ig-versao=0.0.1", "-q");
 
         assertThat(config.quiet).isTrue();
     }
 
     @Test
     void deveIgnorarHelpDuranteParsing() {
-        final VerificarAcesso.Config config =
-                VerificarAcesso.parseArgs("--help", "-h", "--client-id=hs-1", "--key=k.pem", "--cert=c.pem");
+        final VerificarAcesso.Config config = VerificarAcesso.parseArgs(
+                "--help",
+                "-h",
+                "--client-id=hs-1",
+                "--key=k.pem",
+                "--cert=c.pem",
+                "--ig=hemograma",
+                "--ig-versao=0.0.1");
 
         assertThat(config.clientId).isEqualTo("hs-1");
     }
@@ -249,8 +320,8 @@ class VerificarAcessoTest {
         Files.writeString(
                 chave, "-----BEGIN PRIVATE KEY-----\nMIIB\n-----END PRIVATE KEY-----", StandardCharsets.UTF_8);
 
-        final VerificarAcesso.Config config =
-                VerificarAcesso.parseArgs("--client-id=hs-1", "--key=" + chave, "--cert=c.pem");
+        final VerificarAcesso.Config config = VerificarAcesso.parseArgs(
+                "--client-id=hs-1", "--key=" + chave, "--cert=c.pem", "--ig=hemograma", "--ig-versao=0.0.1");
 
         assertThat(config.keyPassword).isNull();
     }
@@ -265,8 +336,8 @@ class VerificarAcessoTest {
 
         // Sob Surefire não há console interativo: a detecção ocorre, mas a
         // senha permanece nula (será exigida adiante na abertura da chave).
-        final VerificarAcesso.Config config =
-                VerificarAcesso.parseArgs("--client-id=hs-1", "--key=" + chave, "--cert=c.pem");
+        final VerificarAcesso.Config config = VerificarAcesso.parseArgs(
+                "--client-id=hs-1", "--key=" + chave, "--cert=c.pem", "--ig=hemograma", "--ig-versao=0.0.1");
 
         assertThat(config.keyPassword).isNull();
     }
@@ -276,8 +347,13 @@ class VerificarAcessoTest {
         final Path chave = tempDir.resolve("chave-cifrada.pem");
         Files.writeString(chave, "ENCRYPTED", StandardCharsets.UTF_8);
 
-        final VerificarAcesso.Config config =
-                VerificarAcesso.parseArgs("--client-id=hs-1", "--key=" + chave, "--cert=c.pem", "--password=abc");
+        final VerificarAcesso.Config config = VerificarAcesso.parseArgs(
+                "--client-id=hs-1",
+                "--key=" + chave,
+                "--cert=c.pem",
+                "--ig=hemograma",
+                "--ig-versao=0.0.1",
+                "--password=abc");
 
         assertThat(config.keyPassword).isEqualTo("abc".toCharArray());
     }
@@ -302,11 +378,14 @@ class VerificarAcessoTest {
                 .contains("--client-id=<ID>")
                 .contains("--key=<PATH>")
                 .contains("--cert=<PATH>")
+                .contains("--ig=<ALIAS>")
+                .contains("--ig-versao=<SEMVER>")
                 .contains("--endpoint=<URL>")
                 .contains("--fhir-base=<URL>")
                 .contains("--scope=<SCOPE>")
                 .contains("--tls=<VERSAO>")
                 .contains("--alg=<ALG>")
+                .contains("--kid=<KID>")
                 .contains("--trust=<PATH>")
                 .contains("--quiet, -q")
                 .contains("--help, -h")

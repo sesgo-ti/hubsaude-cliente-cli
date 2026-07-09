@@ -24,11 +24,11 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * <pre>{@code
  * # Via Maven (desenvolvimento)
  * mvn exec:java -Dexec.mainClass="br.gov.go.saude.hubsaude.client.cli.VerificarAcesso" \
- *     -Dexec.args="--client-id=hs-XXXXXXXX --key=chave.pem --cert=cert.pem"
+ *     -Dexec.args="--client-id=hs-XXXXXXXX --key=chave.pem --cert=cert.pem --ig=hemograma --ig-versao=0.0.1"
  *
  * # Via JAR executável (fat JAR com todas as dependências)
  * java -jar hubsaude-cliente-cli-X.Y.Z.jar \
- *     --client-id=hs-XXXXXXXX --key=chave.pem --cert=cert.pem
+ *     --client-id=hs-XXXXXXXX --key=chave.pem --cert=cert.pem --ig=hemograma --ig-versao=0.0.1
  * }</pre>
  *
  * <h2>Parâmetros</h2>
@@ -36,12 +36,15 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  *   <li>{@code --client-id} — ID do cliente (obrigatório)</li>
  *   <li>{@code --key} — Caminho para chave privada PEM (obrigatório)</li>
  *   <li>{@code --cert} — Caminho para certificado PEM (obrigatório)</li>
+ *   <li>{@code --ig} — Alias do Guia de Implementação para o claim {@code hub_ctx} (obrigatório)</li>
+ *   <li>{@code --ig-versao} — Versão SemVer completa do IG para o claim {@code hub_ctx} (obrigatório)</li>
  *   <li>{@code --endpoint} — URL do token endpoint (opcional, padrão: descoberta automática)</li>
  *   <li>{@code --fhir-base} — URL base FHIR para descoberta (opcional, padrão: https://fhir.saude.go.gov.br)</li>
  *   <li>{@code --scope} — Scope a solicitar (opcional, padrão: system/Patient.rs)</li>
  *   <li>{@code --password} — Senha da chave privada, se criptografada (opcional)</li>
  *   <li>{@code --tls} — Protocolo TLS: TLSv1.3 ou TLSv1.2 (opcional, padrão: TLSv1.3)</li>
- *   <li>{@code --alg} — Algoritmo JWT: RS256, RS384, RS512, PS256, etc. (opcional, padrão: RS256)</li>
+ *   <li>{@code --alg} — Algoritmo JWT aceito pelo HubSaúde: RS384 ou ES384 (opcional, padrão: RS384)</li>
+ *   <li>{@code --kid} — Identificador da chave registrada no SA (header {@code kid}, opcional)</li>
  *   <li>{@code --trust} — Caminho para certificado PEM do servidor (trust anchor), para simulador/homologação</li>
  *   <li>{@code --quiet} — Oculta os detalhes do token (por padrão são exibidos)</li>
  * </ul>
@@ -54,7 +57,26 @@ public final class VerificarAcesso {
     private static final String DEFAULT_FHIR_BASE = "https://hub.saude.go.gov.br";
     private static final String DEFAULT_SCOPE = "system/Patient.rs";
     private static final String DEFAULT_TLS = "TLSv1.3";
-    private static final String DEFAULT_ALG = "RS256";
+
+    /**
+     * Algoritmo JWT padrão (RS384 — concern client-assertion-contexto-ig.md
+     * §3.2: o Servidor de Autorização aceita apenas RS384 e ES384).
+     */
+    private static final String DEFAULT_ALG = "RS384";
+
+    /**
+     * Formato do alias de IG em {@code --ig} (concern
+     * client-assertion-contexto-ig.md §3.4).
+     */
+    private static final java.util.regex.Pattern IG_PATTERN = java.util.regex.Pattern.compile("^[a-z][a-z0-9-]{1,30}$");
+
+    /**
+     * Formato SemVer completo (MAJOR.MINOR.PATCH, sem pre-release/build) em
+     * {@code --ig-versao} (concern client-assertion-contexto-ig.md §3.4).
+     */
+    private static final java.util.regex.Pattern IG_VERSAO_PATTERN =
+            java.util.regex.Pattern.compile("^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$");
+
     private static final int CONNECT_TIMEOUT_SECONDS = 30;
     private static final int REQUEST_TIMEOUT_SECONDS = 60;
     private static final int TOKEN_PREVIEW_CHARS = 50;
@@ -123,8 +145,13 @@ public final class VerificarAcesso {
                 .certificatePem(Path.of(config.certPath))
                 .tlsProtocol(config.tlsProtocol)
                 .jwtAlgorithm(config.jwtAlgorithm)
+                .hubContext(config.ig, config.igVersao)
                 .connectTimeout(Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS))
                 .requestTimeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS));
+
+        if (config.keyId != null) {
+            builder.keyId(config.keyId);
+        }
 
         final boolean usandoDescoberta = config.tokenEndpoint == null;
         if (usandoDescoberta) {
@@ -150,6 +177,7 @@ public final class VerificarAcesso {
         System.out.println("  Chave:      " + config.keyPath);
         System.out.println("  Certificado:" + config.certPath);
         System.out.println("  Scope:      " + config.scope);
+        System.out.println("  IG:         " + config.ig + " (versão " + config.igVersao + ")");
         System.out.println("  TLS:        " + config.tlsProtocol);
         System.out.println("  Algoritmo:  " + client.getJwtAlgorithm());
         if (usandoDescoberta) {
@@ -321,6 +349,10 @@ public final class VerificarAcesso {
             config.keyPath = extractValue(arg, "--key=");
         } else if (arg.startsWith("--cert=")) {
             config.certPath = extractValue(arg, "--cert=");
+        } else if (arg.startsWith("--ig=")) {
+            config.ig = extractValue(arg, "--ig=");
+        } else if (arg.startsWith("--ig-versao=")) {
+            config.igVersao = extractValue(arg, "--ig-versao=");
         } else if (arg.startsWith("--endpoint=")) {
             config.tokenEndpoint = extractValue(arg, "--endpoint=");
         } else if (arg.startsWith("--fhir-base=")) {
@@ -333,6 +365,8 @@ public final class VerificarAcesso {
             config.tlsProtocol = extractValue(arg, "--tls=");
         } else if (arg.startsWith("--alg=")) {
             config.jwtAlgorithm = extractValue(arg, "--alg=").toUpperCase(java.util.Locale.ROOT);
+        } else if (arg.startsWith("--kid=")) {
+            config.keyId = extractValue(arg, "--kid=");
         } else if (arg.startsWith("--trust=")) {
             config.trustAnchorPath = extractValue(arg, "--trust=");
         } else if ("--quiet".equals(arg) || "-q".equals(arg)) {
@@ -355,6 +389,33 @@ public final class VerificarAcesso {
         }
         if (config.certPath == null) {
             throw new IllegalArgumentException("--cert é obrigatório");
+        }
+        validateHubContextArgs(config);
+    }
+
+    /**
+     * Valida os parâmetros do claim {@code hub_ctx} (concern
+     * client-assertion-contexto-ig.md §3.4): {@code --ig} e
+     * {@code --ig-versao} são obrigatórios e devem seguir, respectivamente,
+     * o formato de alias de IG e SemVer completo MAJOR.MINOR.PATCH.
+     *
+     * @param config configuração parseada
+     * @throws IllegalArgumentException se ausentes ou fora do formato
+     */
+    private static void validateHubContextArgs(final Config config) {
+        if (config.ig == null) {
+            throw new IllegalArgumentException("--ig é obrigatório (alias do Guia de Implementação)");
+        }
+        if (!IG_PATTERN.matcher(config.ig).matches()) {
+            throw new IllegalArgumentException(
+                    "--ig inválido: '" + config.ig + "' (use minúsculas, dígitos e hífen, iniciando por letra)");
+        }
+        if (config.igVersao == null) {
+            throw new IllegalArgumentException("--ig-versao é obrigatório (versão SemVer do Guia de Implementação)");
+        }
+        if (!IG_VERSAO_PATTERN.matcher(config.igVersao).matches()) {
+            throw new IllegalArgumentException("--ig-versao inválido: '" + config.igVersao
+                    + "' (use SemVer completo MAJOR.MINOR.PATCH, ex.: 0.0.1)");
         }
     }
 
@@ -429,12 +490,15 @@ public final class VerificarAcesso {
         System.out.println();
         System.out.println(ANSI_BOLD + "USO:" + ANSI_RESET);
         System.out.println("  java -jar hubsaude-cliente-cli-X.Y.Z.jar \\");
-        System.out.println("      --client-id=<ID> --key=<CHAVE.PEM> --cert=<CERT.PEM> [opções]");
+        System.out.println("      --client-id=<ID> --key=<CHAVE.PEM> --cert=<CERT.PEM> \\");
+        System.out.println("      --ig=<ALIAS> --ig-versao=<SEMVER> [opções]");
         System.out.println();
         System.out.println(ANSI_BOLD + "PARÂMETROS OBRIGATÓRIOS:" + ANSI_RESET);
         System.out.println("  --client-id=<ID>      ID do cliente (fornecido no credenciamento)");
         System.out.println("  --key=<PATH>          Caminho para a chave privada PEM");
         System.out.println("  --cert=<PATH>         Caminho para o certificado PEM");
+        System.out.println("  --ig=<ALIAS>          Alias do Guia de Implementação (claim hub_ctx)");
+        System.out.println("  --ig-versao=<SEMVER>  Versão SemVer completa do IG (ex.: 0.0.1)");
         System.out.println();
         System.out.println(ANSI_BOLD + "PARÂMETROS OPCIONAIS:" + ANSI_RESET);
         System.out.println("  --endpoint=<URL>      URL do token endpoint (desabilita descoberta)");
@@ -442,8 +506,8 @@ public final class VerificarAcesso {
         System.out.println("  --scope=<SCOPE>       Scope a solicitar (padrão: " + DEFAULT_SCOPE + ")");
         System.out.println("  --password=<SENHA>    Senha da chave privada (se criptografada)");
         System.out.println("  --tls=<VERSAO>        Protocolo TLS: TLSv1.3 ou TLSv1.2 (padrão: " + DEFAULT_TLS + ")");
-        System.out.println("  --alg=<ALG>           Algoritmo JWT: RS256, RS384, RS512, PS256, etc. (padrão: "
-                + DEFAULT_ALG + ")");
+        System.out.println("  --alg=<ALG>           Algoritmo JWT: RS384 ou ES384 (padrão: " + DEFAULT_ALG + ")");
+        System.out.println("  --kid=<KID>           Identificador da chave registrada no SA (header kid)");
         System.out.println(
                 "  --trust=<PATH>        Certificado PEM do servidor " + "(trust anchor, para simulador/homologação)");
         System.out.println("  --quiet, -q           Oculta os detalhes do token (exibidos por padrão)");
@@ -455,15 +519,19 @@ public final class VerificarAcesso {
         System.out.println("  java -jar hubsaude-cliente-cli-0.0.0-SNAPSHOT.jar \\");
         System.out.println("      --client-id=hs-12345678 \\");
         System.out.println("      --key=minha-chave.pem \\");
-        System.out.println("      --cert=meu-certificado.pem");
+        System.out.println("      --cert=meu-certificado.pem \\");
+        System.out.println("      --ig=hemograma \\");
+        System.out.println("      --ig-versao=0.0.1");
         System.out.println();
-        System.out.println("  # Com endpoint explícito, TLS 1.2 e algoritmo RS256");
+        System.out.println("  # Com endpoint explícito, TLS 1.2 e algoritmo ES384");
         System.out.println("  java -jar hubsaude-cliente-cli-0.0.0-SNAPSHOT.jar \\");
         System.out.println("      --client-id=hs-12345678 \\");
         System.out.println("      --key=minha-chave.pem \\");
         System.out.println("      --cert=meu-certificado.pem \\");
+        System.out.println("      --ig=hemograma \\");
+        System.out.println("      --ig-versao=0.0.1 \\");
         System.out.println("      --endpoint=https://fhir.saude.go.gov.br/auth/token \\");
-        System.out.println("      --alg=RS256 \\");
+        System.out.println("      --alg=ES384 \\");
         System.out.println("      --tls=TLSv1.2 \\");
         System.out.println("      --quiet");
         System.out.println();
@@ -515,12 +583,15 @@ public final class VerificarAcesso {
         String clientId;
         String keyPath;
         String certPath;
+        String ig;
+        String igVersao;
         String tokenEndpoint;
         String fhirBase = DEFAULT_FHIR_BASE;
         String scope = DEFAULT_SCOPE;
         char[] keyPassword;
         String tlsProtocol = DEFAULT_TLS;
         String jwtAlgorithm = DEFAULT_ALG;
+        String keyId;
         String trustAnchorPath;
         boolean quiet;
     }

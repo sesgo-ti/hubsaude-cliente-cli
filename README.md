@@ -62,7 +62,9 @@ da base FHIR padrão (`https://hub.saude.go.gov.br`):
 java -jar hubsaude-cliente-cli-<versão>.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
-    --cert=meu-certificado.pem
+    --cert=meu-certificado.pem \
+    --ig=hemograma \
+    --ig-versao=0.0.1
 ```
 
 Por padrão a saída inclui os detalhes do token. Use `--quiet` para ocultá-los:
@@ -72,6 +74,8 @@ java -jar hubsaude-cliente-cli-<versão>.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem \
+    --ig=hemograma \
+    --ig-versao=0.0.1 \
     --quiet
 ```
 
@@ -86,6 +90,8 @@ java -jar hubsaude-cliente-cli-<versão>.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem \
+    --ig=hemograma \
+    --ig-versao=0.0.1 \
     --endpoint=https://auth.staging.saude.go.gov.br/realms/hub/protocol/openid-connect/token \
     --scope=system/Observation.rs
 ```
@@ -114,6 +120,8 @@ java -jar hubsaude-cliente-cli-<versão>.jar \
     --client-id=hs-12345678 \
     --key=minha-chave.pem \
     --cert=meu-certificado.pem \
+    --ig=hemograma \
+    --ig-versao=0.0.1 \
     --trust=ca-homologacao.pem \
     --tls=TLSv1.2
 ```
@@ -126,7 +134,7 @@ Sem empacotar o fat-jar, a partir do diretório do projeto
 ```bash
 mvn exec:java \
     -Dexec.mainClass="br.gov.go.saude.hubsaude.client.cli.VerificarAcesso" \
-    -Dexec.args="--client-id=hs-12345678 --key=minha-chave.pem --cert=meu-certificado.pem"
+    -Dexec.args="--client-id=hs-12345678 --key=minha-chave.pem --cert=meu-certificado.pem --ig=hemograma --ig-versao=0.0.1"
 ```
 
 **Saída esperada (modo `--quiet`):**
@@ -141,8 +149,9 @@ mvn exec:java \
   Chave:      minha-chave.pem
   Certificado:meu-certificado.pem
   Scope:      system/Patient.rs
+  IG:         hemograma (versão 0.0.1)
   TLS:        TLSv1.3
-  Algoritmo:  RS256
+  Algoritmo:  RS384
   FHIR Base:  https://hub.saude.go.gov.br
   Endpoint:   https://hub.saude.go.gov.br/auth/token (descoberto via .well-known)
 
@@ -199,12 +208,15 @@ Em caso de erro, a ferramenta imprime uma mensagem prefixada por `[X]` em
 | `--client-id`  | ID do cliente (fornecido no credenciamento)                                | Sim         |
 | `--key`        | Caminho para a chave privada PEM                                           | Sim         |
 | `--cert`       | Caminho para o certificado PEM                                             | Sim         |
+| `--ig`         | Alias do Guia de Implementação pretendido (claim `hub_ctx.ig`)             | Sim         |
+| `--ig-versao`  | Versão SemVer completa do IG (claim `hub_ctx.versao`, ex.: `0.0.1`)        | Sim         |
 | `--endpoint`   | URL do token endpoint (desabilita descoberta automática)                   | Não         |
 | `--fhir-base`  | URL base FHIR (padrão: `https://hub.saude.go.gov.br`)                      | Não         |
 | `--scope`      | Scope a solicitar (padrão: `system/Patient.rs`)                            | Não         |
 | `--password`   | Senha da chave privada (se criptografada)                                  | Não         |
 | `--tls`        | Protocolo TLS: `TLSv1.3` ou `TLSv1.2` (padrão: `TLSv1.3`)                  | Não         |
-| `--alg`        | Algoritmo JWT: `RS256`, `RS384`, `RS512`, `PS256`, etc. (padrão: `RS256`)  | Não         |
+| `--alg`        | Algoritmo JWT aceito pelo HubSaúde: `RS384` ou `ES384` (padrão: `RS384`)   | Não         |
+| `--kid`        | Identificador da chave registrada no SA (header `kid`, rotação de chaves)  | Não         |
 | `--trust`      | Certificado PEM do servidor (trust anchor, para simulador/homologação)     | Não         |
 | `--quiet`      | Oculta os detalhes do token (exibidos por padrão)                          | Não         |
 
