@@ -163,8 +163,7 @@ public final class VerificarAcesso {
         printInfo("Obtendo token de acesso...");
         final Instant start = Instant.now();
 
-        final SmartTokenClient.TokenResponse resposta =
-                client.obtainTokenResponse(config.scope);
+        final SmartTokenClient.TokenResponse resposta = client.obtainTokenResponse(config.scope);
         final String token = resposta.accessToken();
 
         final Duration elapsed = Duration.between(start, Instant.now());
@@ -180,8 +179,7 @@ public final class VerificarAcesso {
         System.out.println("  Tempo de resposta: " + elapsed.toMillis() + "ms");
 
         if (config.quiet) {
-            final String preview = token.substring(0,
-                    Math.min(TOKEN_PREVIEW_CHARS, token.length()));
+            final String preview = token.substring(0, Math.min(TOKEN_PREVIEW_CHARS, token.length()));
             System.out.println("  Token (primeiros " + TOKEN_PREVIEW_CHARS + " chars): " + preview + "...");
             System.out.println();
             printInfo("Omita --quiet para ver detalhes do token.");
@@ -199,17 +197,18 @@ public final class VerificarAcesso {
      * {@code access_token} (e de outros segredos, se presentes) é substituído
      * por um placeholder para não vazar o token na saída.
      *
+     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
+     *
      * @param rawJson corpo JSON cru da resposta; pode ser {@code null} quando
      *                o token foi servido a partir do cache
      */
-    private static void printKeycloakResponse(final String rawJson) {
+    static void printKeycloakResponse(final String rawJson) {
         if (rawJson == null || rawJson.isBlank()) {
             return;
         }
         printInfo("Resposta do servidor de autorização (Keycloak):");
         System.out.println();
-        System.out.print(JwtPayloadFormatter
-                .formatAsTable(redactSecrets(rawJson), "    "));
+        System.out.print(JwtPayloadFormatter.formatAsTable(redactSecrets(rawJson), "    "));
         System.out.println();
     }
 
@@ -217,42 +216,44 @@ public final class VerificarAcesso {
      * Substitui os valores de campos sensíveis ({@code access_token},
      * {@code refresh_token}, {@code id_token}) por um placeholder.
      *
+     * <p>Visibilidade de pacote para teste unitário direto (issue #986):
+     * a redação de segredos é lógica pura e sensível à segurança.</p>
+     *
      * @param json JSON original
      * @return JSON com os segredos redigidos
      */
-    private static String redactSecrets(final String json) {
-        return json.replaceAll(
-                "(\"(?:access_token|refresh_token|id_token)\"\\s*:\\s*\")[^\"]*\"",
-                "$1<REDACTED>\"");
+    static String redactSecrets(final String json) {
+        return json.replaceAll("(\"(?:access_token|refresh_token|id_token)\"\\s*:\\s*\")[^\"]*\"", "$1<REDACTED>\"");
     }
 
+    /**
+     * Exibe header, payload e conteúdo integral do token JWT.
+     *
+     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
+     *
+     * @param token JWT compacto ({@code header.payload.assinatura})
+     */
     @SuppressFBWarnings(
             value = "REC_CATCH_EXCEPTION",
             justification = "Decodificação do JWT é best-effort para exibição; "
                     + "qualquer falha cai no fallback amigável sem abortar.")
-    private static void printTokenDetails(final String token) {
+    static void printTokenDetails(final String token) {
         System.out.println();
         printInfo("Detalhes do token JWT:");
 
         try {
             final String[] parts = token.split("\\.");
             if (parts.length >= 2) {
-                final String headerJson = new String(
-                        Base64.getUrlDecoder().decode(parts[0]),
-                        StandardCharsets.UTF_8);
-                final String payloadJson = new String(
-                        Base64.getUrlDecoder().decode(parts[1]),
-                        StandardCharsets.UTF_8);
+                final String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
+                final String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
 
                 System.out.println();
                 System.out.println("  Header:");
-                System.out.print(JwtPayloadFormatter
-                        .formatAsTable(headerJson, "    "));
+                System.out.print(JwtPayloadFormatter.formatAsTable(headerJson, "    "));
 
                 System.out.println();
                 System.out.println("  Payload:");
-                System.out.print(JwtPayloadFormatter
-                        .formatAsTable(payloadJson, "    "));
+                System.out.print(JwtPayloadFormatter.formatAsTable(payloadJson, "    "));
             }
         } catch (Exception e) {
             System.out.println("  (Não foi possível decodificar o token)");
@@ -261,12 +262,20 @@ public final class VerificarAcesso {
         System.out.println();
         System.out.println("  Token completo:");
         for (int i = 0; i < token.length(); i += TOKEN_LINE_WIDTH) {
-            System.out.println("    " + token.substring(i,
-                    Math.min(i + TOKEN_LINE_WIDTH, token.length())));
+            System.out.println("    " + token.substring(i, Math.min(i + TOKEN_LINE_WIDTH, token.length())));
         }
     }
 
-    private static void validateFile(final String path, final String description) {
+    /**
+     * Valida que o arquivo existe e é legível.
+     *
+     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
+     *
+     * @param path caminho do arquivo
+     * @param description descrição usada na mensagem de erro
+     * @throws IllegalArgumentException se o arquivo não existir ou não puder ser lido
+     */
+    static void validateFile(final String path, final String description) {
         final Path file = Path.of(path);
         if (!Files.exists(file)) {
             throw new IllegalArgumentException(description + " não encontrado: " + path);
@@ -276,7 +285,19 @@ public final class VerificarAcesso {
         }
     }
 
-    private static Config parseArgs(final String... args) {
+    /**
+     * Interpreta os argumentos de linha de comando e monta a configuração,
+     * aplicando os valores padrão e validando os parâmetros obrigatórios.
+     *
+     * <p>Visibilidade de pacote para teste unitário direto do parsing
+     * (issue #986), sem expor API pública.</p>
+     *
+     * @param args argumentos da linha de comando
+     * @return configuração montada
+     * @throws IllegalArgumentException se houver argumento desconhecido ou
+     *         parâmetro obrigatório ausente
+     */
+    static Config parseArgs(final String... args) {
         final Config config = new Config();
 
         for (final String arg : args) {
@@ -365,7 +386,16 @@ public final class VerificarAcesso {
         return null;
     }
 
-    private static boolean hasFlag(final String[] args, final String... flags) {
+    /**
+     * Verifica se algum dos aliases da flag está presente nos argumentos.
+     *
+     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
+     *
+     * @param args argumentos da linha de comando
+     * @param flags aliases aceitos (ex.: {@code --quiet}, {@code -q})
+     * @return {@code true} se algum alias estiver presente
+     */
+    static boolean hasFlag(final String[] args, final String... flags) {
         for (final String arg : args) {
             for (final String flag : flags) {
                 if (arg.equals(flag)) {
@@ -376,7 +406,12 @@ public final class VerificarAcesso {
         return false;
     }
 
-    private static void printBanner() {
+    /**
+     * Imprime o banner de abertura da ferramenta.
+     *
+     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
+     */
+    static void printBanner() {
         System.out.println();
         System.out.println(ANSI_BOLD + "╔═══════════════════════════════════════════════════════════╗" + ANSI_RESET);
         System.out.println(ANSI_BOLD + "║     HubSaúde - Verificador de Acesso (Pós-Credenciamento) ║" + ANSI_RESET);
@@ -384,7 +419,12 @@ public final class VerificarAcesso {
         System.out.println();
     }
 
-    private static void printUsage() {
+    /**
+     * Imprime as instruções de uso (parâmetros, exemplos e códigos de saída).
+     *
+     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
+     */
+    static void printUsage() {
         System.out.println("Verifica se o credenciamento foi aprovado obtendo um token de acesso.");
         System.out.println();
         System.out.println(ANSI_BOLD + "USO:" + ANSI_RESET);
@@ -398,17 +438,14 @@ public final class VerificarAcesso {
         System.out.println();
         System.out.println(ANSI_BOLD + "PARÂMETROS OPCIONAIS:" + ANSI_RESET);
         System.out.println("  --endpoint=<URL>      URL do token endpoint (desabilita descoberta)");
-        System.out.println("  --fhir-base=<URL>     URL base FHIR (padrão: "
-                + DEFAULT_FHIR_BASE + ")");
-        System.out.println("  --scope=<SCOPE>       Scope a solicitar (padrão: "
-                + DEFAULT_SCOPE + ")");
+        System.out.println("  --fhir-base=<URL>     URL base FHIR (padrão: " + DEFAULT_FHIR_BASE + ")");
+        System.out.println("  --scope=<SCOPE>       Scope a solicitar (padrão: " + DEFAULT_SCOPE + ")");
         System.out.println("  --password=<SENHA>    Senha da chave privada (se criptografada)");
-        System.out.println("  --tls=<VERSAO>        Protocolo TLS: TLSv1.3 ou TLSv1.2 (padrão: "
-                + DEFAULT_TLS + ")");
+        System.out.println("  --tls=<VERSAO>        Protocolo TLS: TLSv1.3 ou TLSv1.2 (padrão: " + DEFAULT_TLS + ")");
         System.out.println("  --alg=<ALG>           Algoritmo JWT: RS256, RS384, RS512, PS256, etc. (padrão: "
                 + DEFAULT_ALG + ")");
-        System.out.println("  --trust=<PATH>        Certificado PEM do servidor "
-                + "(trust anchor, para simulador/homologação)");
+        System.out.println(
+                "  --trust=<PATH>        Certificado PEM do servidor " + "(trust anchor, para simulador/homologação)");
         System.out.println("  --quiet, -q           Oculta os detalhes do token (exibidos por padrão)");
         System.out.println("  --help, -h            Exibe esta mensagem");
         System.out.println();
@@ -436,15 +473,36 @@ public final class VerificarAcesso {
         System.out.println();
     }
 
-    private static void printInfo(final String message) {
+    /**
+     * Imprime mensagem informativa com o prefixo {@code [i]}.
+     *
+     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
+     *
+     * @param message mensagem a exibir
+     */
+    static void printInfo(final String message) {
         System.out.println(ANSI_YELLOW + "[i] " + message + ANSI_RESET);
     }
 
-    private static void printSuccess(final String message) {
+    /**
+     * Imprime mensagem de sucesso com o prefixo {@code [OK]}.
+     *
+     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
+     *
+     * @param message mensagem a exibir
+     */
+    static void printSuccess(final String message) {
         System.out.println(ANSI_GREEN + "[OK] " + message + ANSI_RESET);
     }
 
-    private static void printError(final String message) {
+    /**
+     * Imprime mensagem de erro em {@code stderr} com o prefixo {@code [X]}.
+     *
+     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
+     *
+     * @param message mensagem a exibir
+     */
+    static void printError(final String message) {
         System.err.println(ANSI_RED + "[X] " + message + ANSI_RESET);
     }
 
@@ -452,8 +510,8 @@ public final class VerificarAcesso {
      * Configuração parseada dos argumentos de linha de comando.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier", "PMD.DataClass"})
-    // package-private fields acessados apenas internamente neste CLI
-    private static final class Config {
+    // package-private fields acessados apenas neste CLI e em seus testes
+    static final class Config {
         String clientId;
         String keyPath;
         String certPath;

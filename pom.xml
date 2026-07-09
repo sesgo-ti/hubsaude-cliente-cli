@@ -78,30 +78,39 @@
 
     <build>
         <plugins>
-            <!-- JaCoCo: CLI interativo, não testável automaticamente -->
+            <!--
+                JaCoCo (issue #986): verificação de cobertura reativada.
+                As lógicas puras do CLI (parsing de argumentos, redação de
+                segredos, validação de arquivos, formatação de payload JWT
+                e rotinas de exibição no terminal) são cobertas por testes
+                unitários. Apenas main (System.exit), a chamada de rede via
+                SmartTokenClient e a leitura interativa de senha permanecem
+                fora do alcance dos testes unitários. O mínimo de 0.70
+                espelha o gate central COVERAGE_LINE (hubsaude-quality).
+            -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>**/cli/VerificarAcesso.class</exclude>
-                        <exclude>**/cli/VerificarAcesso$Config.class</exclude>
-                    </excludes>
-                </configuration>
                 <executions>
-                    <!--
-                        CLI interativo, não testável automaticamente:
-                        desativa a verificação de cobertura (jacoco:check)
-                        ligando-a à fase 'none'. Não basta usar <skip>true</skip>
-                        porque o parâmetro obrigatório 'rules' do goal 'check'
-                        é validado pelo Maven antes do execute().
-                    -->
                     <execution>
                         <id>jacoco-check</id>
-                        <phase>none</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.70</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
