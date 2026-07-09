@@ -47,7 +47,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * </ul>
  */
 // PMD.GodClass: TODO débito técnico — extrair parsing de argumentos, IO e
-// validação em colaboradores dedicados.
+// validação em colaboradores dedicados. Rastreado na issue #1034.
 @SuppressWarnings("PMD.GodClass")
 public final class VerificarAcesso {
 
