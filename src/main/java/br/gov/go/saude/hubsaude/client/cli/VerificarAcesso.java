@@ -47,6 +47,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  *   <li>{@code --kid} — Identificador da chave registrada no SA (header {@code kid}, opcional)</li>
  *   <li>{@code --trust} — Caminho para certificado PEM do servidor (trust anchor), para simulador/homologação</li>
  *   <li>{@code --quiet} — Oculta os detalhes do token (por padrão são exibidos)</li>
+ *   <li>{@code --debug} — Exibe detalhes técnicos (stack trace) em caso de erro</li>
  * </ul>
  */
 // PMD.GodClass: TODO débito técnico — extrair parsing de argumentos, IO e
@@ -97,12 +98,6 @@ public final class VerificarAcesso {
      *
      * @param args argumentos de linha de comando
      */
-    @SuppressFBWarnings(
-            value = "INFORMATION_EXPOSURE_THROUGH_AN_ERROR_MESSAGE",
-            justification = "Ferramenta de diagnóstico CLI: o stack trace só é "
-                    + "exibido em modo verbose (sem --quiet) para o próprio "
-                    + "operador, não há superfície remota; a saída destina-se "
-                    + "ao próprio operador no terminal.")
     public static void main(final String[] args) {
         printBanner();
 
@@ -118,12 +113,42 @@ public final class VerificarAcesso {
             printError("Erro de configuração: " + e.getMessage());
             System.exit(1);
         } catch (Exception e) {
-            printError("Falha ao obter token: " + e.getMessage());
-            if (!hasFlag(args, "--quiet", "-q")) {
-                e.printStackTrace();
-            }
+            reportarFalha(e, hasFlag(args, "--debug"));
             System.exit(1);
         }
+    }
+
+    /**
+     * Reporta uma falha de obtenção de token no stderr com mensagem curta e
+     * acionável; os detalhes técnicos (stack trace) são emitidos apenas em
+     * modo diagnóstico.
+     *
+     * @param e falha ocorrida
+     * @param debug se {@code true}, emite os detalhes técnicos
+     */
+    static void reportarFalha(final Exception e, final boolean debug) {
+        printError("Falha ao obter token: " + e.getMessage());
+        if (debug) {
+            System.err.println(formatarStackTrace(e));
+        } else {
+            System.err.println(ANSI_YELLOW + "[i] Execute com --debug para exibir os detalhes técnicos." + ANSI_RESET);
+        }
+    }
+
+    private static String formatarStackTrace(final Throwable falha) {
+        final StringBuilder sb = new StringBuilder();
+        Throwable atual = falha;
+        String prefixo = "";
+        while (atual != null) {
+            sb.append(prefixo).append(atual);
+            for (StackTraceElement quadro : atual.getStackTrace()) {
+                sb.append(System.lineSeparator()).append("\tat ").append(quadro);
+            }
+            final Throwable proxima = atual.getCause();
+            atual = proxima == atual ? null : proxima;
+            prefixo = System.lineSeparator() + "Causado por: ";
+        }
+        return sb.toString();
     }
 
     // PMD.SignatureDeclareThrowsException: ponto de entrada CLI; loga e
@@ -371,7 +396,7 @@ public final class VerificarAcesso {
             config.trustAnchorPath = extractValue(arg, "--trust=");
         } else if ("--quiet".equals(arg) || "-q".equals(arg)) {
             config.quiet = true;
-        } else if (!"--help".equals(arg) && !"-h".equals(arg)) {
+        } else if (!"--help".equals(arg) && !"-h".equals(arg) && !"--debug".equals(arg)) {
             throw new IllegalArgumentException("Argumento desconhecido: " + arg);
         }
     }
@@ -511,6 +536,7 @@ public final class VerificarAcesso {
         System.out.println(
                 "  --trust=<PATH>        Certificado PEM do servidor " + "(trust anchor, para simulador/homologação)");
         System.out.println("  --quiet, -q           Oculta os detalhes do token (exibidos por padrão)");
+        System.out.println("  --debug               Exibe detalhes técnicos (stack trace) em caso de erro");
         System.out.println("  --help, -h            Exibe esta mensagem");
         System.out.println();
         System.out.println(ANSI_BOLD + "EXEMPLOS:" + ANSI_RESET);

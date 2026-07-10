@@ -183,11 +183,13 @@ Em caso de erro, a ferramenta imprime uma mensagem prefixada por `[X]` em
   ```
 
 - **Falha ao obter token** — credenciamento não aprovado, `client-id` inválido,
-  problema de TLS/CA ou conectividade. Sem `--quiet`, o *stack trace* é exibido
+  problema de TLS/CA ou conectividade. Por padrão apenas a mensagem curta é
+  exibida; com `--debug`, os detalhes técnicos (*stack trace*) são exibidos
   para facilitar o diagnóstico:
 
   ```
   [X] Falha ao obter token: <detalhe da causa>
+  [i] Execute com --debug para exibir os detalhes técnicos.
   ```
 
   (o texto após os dois-pontos varia conforme a causa)
@@ -219,6 +221,7 @@ Em caso de erro, a ferramenta imprime uma mensagem prefixada por `[X]` em
 | `--kid`        | Identificador da chave registrada no SA (header `kid`, rotação de chaves)  | Não         |
 | `--trust`      | Certificado PEM do servidor (trust anchor, para simulador/homologação)     | Não         |
 | `--quiet`      | Oculta os detalhes do token (exibidos por padrão)                          | Não         |
+| `--debug`      | Exibe detalhes técnicos (*stack trace*) em caso de erro                    | Não         |
 
 ---
 
