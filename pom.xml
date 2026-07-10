@@ -15,7 +15,7 @@
     <version>${revision}</version>
 
     <properties>
-        <revision>0.3.19-SNAPSHOT</revision>
+        <revision>0.3.20-SNAPSHOT</revision>
     </properties>
 
     <name>HubSaúde Cliente CLI</name>
