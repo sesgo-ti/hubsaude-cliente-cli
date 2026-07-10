@@ -50,14 +50,12 @@
     </developers>
 
     <dependencies>
-        <!-- Biblioteca cliente: contém SmartTokenClient e demais classes.
-             0.3.15-SNAPSHOT: consome hubContext()/RS384 (issue #361) ainda
-             não publicados; o CI instala hubsaude-cliente-java do source.
-             Fixar em 0.3.15 quando a release for publicada. -->
+        <!-- Biblioteca cliente: contém SmartTokenClient e demais classes
+             (hubContext()/RS384, issue #361), resolvida do GitHub Packages. -->
         <dependency>
             <groupId>br.gov.go.saude.hubsaude</groupId>
             <artifactId>hubsaude-cliente-java</artifactId>
-            <version>0.3.15-SNAPSHOT</version>
+            <version>0.3.15</version>
         </dependency>
 
         <!-- SLF4J Simple: implementação minimalista para CLI -->
