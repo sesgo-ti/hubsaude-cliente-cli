@@ -5,17 +5,11 @@
 
 package br.gov.go.saude.hubsaude.client.cli;
 
-import java.io.Console;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
 
 import br.gov.go.saude.hubsaude.client.SmartTokenClient;
-import br.gov.go.saude.hubsaude.client.SmartTokenClientBuilder;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Ferramenta de linha de comando para verificar acesso ao HubSaúde após credenciamento.
@@ -49,45 +43,14 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  *   <li>{@code --quiet} — Oculta os detalhes do token (por padrão são exibidos)</li>
  *   <li>{@code --debug} — Exibe detalhes técnicos (stack trace) em caso de erro</li>
  * </ul>
+ *
+ * <p>As responsabilidades desta classe são apenas de orquestração; o parsing
+ * e a validação dos argumentos vivem em {@link AnalisadorArgumentos}, a
+ * formatação de saída em {@link SaidaConsole} e a chamada ao
+ * {@code SmartTokenClient} atrás da costura {@link ClienteToken}
+ * (issue #1034).</p>
  */
-// PMD.GodClass: TODO débito técnico — extrair parsing de argumentos, IO e
-// validação em colaboradores dedicados. Rastreado na issue #1034.
-@SuppressWarnings("PMD.GodClass")
 public final class VerificarAcesso {
-
-    private static final String DEFAULT_FHIR_BASE = "https://hub.saude.go.gov.br";
-    private static final String DEFAULT_SCOPE = "system/Patient.rs";
-    private static final String DEFAULT_TLS = "TLSv1.3";
-
-    /**
-     * Algoritmo JWT padrão (RS384 — concern client-assertion-contexto-ig.md
-     * §3.2: o Servidor de Autorização aceita apenas RS384 e ES384).
-     */
-    private static final String DEFAULT_ALG = "RS384";
-
-    /**
-     * Formato do alias de IG em {@code --ig} (concern
-     * client-assertion-contexto-ig.md §3.4).
-     */
-    private static final java.util.regex.Pattern IG_PATTERN = java.util.regex.Pattern.compile("^[a-z][a-z0-9-]{1,30}$");
-
-    /**
-     * Formato SemVer completo (MAJOR.MINOR.PATCH, sem pre-release/build) em
-     * {@code --ig-versao} (concern client-assertion-contexto-ig.md §3.4).
-     */
-    private static final java.util.regex.Pattern IG_VERSAO_PATTERN =
-            java.util.regex.Pattern.compile("^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$");
-
-    private static final int CONNECT_TIMEOUT_SECONDS = 30;
-    private static final int REQUEST_TIMEOUT_SECONDS = 60;
-    private static final int TOKEN_PREVIEW_CHARS = 50;
-    private static final int TOKEN_LINE_WIDTH = 80;
-
-    private static final String ANSI_GREEN = "\u001B[32m";
-    private static final String ANSI_RED = "\u001B[31m";
-    private static final String ANSI_YELLOW = "\u001B[33m";
-    private static final String ANSI_RESET = "\u001B[0m";
-    private static final String ANSI_BOLD = "\u001B[1m";
 
     private VerificarAcesso() {
         // Utilitário não instanciável
@@ -99,526 +62,58 @@ public final class VerificarAcesso {
      * @param args argumentos de linha de comando
      */
     public static void main(final String[] args) {
-        printBanner();
+        SaidaConsole.printBanner();
 
-        if (args.length == 0 || hasFlag(args, "--help", "-h")) {
-            printUsage();
+        if (args.length == 0 || AnalisadorArgumentos.hasFlag(args, "--help", "-h")) {
+            SaidaConsole.printUsage();
             System.exit(0);
         }
 
         try {
-            final Config config = parseArgs(args);
-            verificarAcesso(config);
+            final AnalisadorArgumentos.Config config = AnalisadorArgumentos.parseArgs(args);
+            verificarAcesso(config, ClienteToken::conectar);
         } catch (IllegalArgumentException e) {
-            printError("Erro de configuração: " + e.getMessage());
+            SaidaConsole.printError("Erro de configuração: " + e.getMessage());
             System.exit(1);
         } catch (Exception e) {
-            reportarFalha(e, hasFlag(args, "--debug"));
+            SaidaConsole.reportarFalha(e, AnalisadorArgumentos.hasFlag(args, "--debug"));
             System.exit(1);
         }
     }
 
     /**
-     * Reporta uma falha de obtenção de token no stderr com mensagem curta e
-     * acionável; os detalhes técnicos (stack trace) são emitidos apenas em
-     * modo diagnóstico.
+     * Executa a verificação de acesso: valida os arquivos configurados, cria
+     * o cliente pela fábrica dada, obtém o token e exibe o resultado.
      *
-     * @param e falha ocorrida
-     * @param debug se {@code true}, emite os detalhes técnicos
+     * <p>Visibilidade de pacote para teste unitário direto do fluxo com uma
+     * {@link ClienteToken.Fabrica} fake (issue #1034), sem rede.</p>
+     *
+     * @param config configuração parseada
+     * @param fabrica fábrica do cliente de token
+     * @throws IOException em caso de erro de rede, de protocolo ou de leitura
+     *         dos arquivos PEM
+     * @throws InterruptedException se a thread for interrompida durante a
+     *         requisição
      */
-    static void reportarFalha(final Exception e, final boolean debug) {
-        printError("Falha ao obter token: " + e.getMessage());
-        if (debug) {
-            System.err.println(formatarStackTrace(e));
-        } else {
-            System.err.println(ANSI_YELLOW + "[i] Execute com --debug para exibir os detalhes técnicos." + ANSI_RESET);
-        }
-    }
-
-    private static String formatarStackTrace(final Throwable falha) {
-        final StringBuilder sb = new StringBuilder();
-        Throwable atual = falha;
-        String prefixo = "";
-        while (atual != null) {
-            sb.append(prefixo).append(atual);
-            for (StackTraceElement quadro : atual.getStackTrace()) {
-                sb.append(System.lineSeparator()).append("\tat ").append(quadro);
-            }
-            final Throwable proxima = atual.getCause();
-            atual = proxima == atual ? null : proxima;
-            prefixo = System.lineSeparator() + "Causado por: ";
-        }
-        return sb.toString();
-    }
-
-    // PMD.SignatureDeclareThrowsException: ponto de entrada CLI; loga e
-    // encerra o processo no chamador.
-    @SuppressWarnings("PMD.SignatureDeclareThrowsException")
-    @SuppressFBWarnings(
-            value = "THROWS_METHOD_THROWS_CLAUSE_BASIC_EXCEPTION",
-            justification = "Ponto de entrada CLI: agrega exceções do cliente "
-                    + "SMART; o chamador (main) trata e encerra o processo.")
-    private static void verificarAcesso(final Config config) throws Exception {
+    static void verificarAcesso(final AnalisadorArgumentos.Config config, final ClienteToken.Fabrica fabrica)
+            throws IOException, InterruptedException {
         // Validar arquivos primeiro
-        validateFile(config.keyPath, "Chave privada");
-        validateFile(config.certPath, "Certificado");
+        AnalisadorArgumentos.validateFile(config.keyPath, "Chave privada");
+        AnalisadorArgumentos.validateFile(config.certPath, "Certificado");
 
-        // Construir cliente
-        final SmartTokenClientBuilder builder = SmartTokenClient.builder()
-                .clientId(config.clientId)
-                .privateKeyPem(Path.of(config.keyPath))
-                .certificatePem(Path.of(config.certPath))
-                .tlsProtocol(config.tlsProtocol)
-                .jwtAlgorithm(config.jwtAlgorithm)
-                .hubContext(config.ig, config.igVersao)
-                .connectTimeout(Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS))
-                .requestTimeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS));
-
-        if (config.keyId != null) {
-            builder.keyId(config.keyId);
-        }
-
-        final boolean usandoDescoberta = config.tokenEndpoint == null;
-        if (usandoDescoberta) {
-            builder.fhirBase(config.fhirBase);
-        } else {
-            builder.tokenEndpoint(config.tokenEndpoint);
-        }
-
-        if (config.keyPassword != null) {
-            builder.privateKeyPassword(config.keyPassword);
-        }
-
-        if (config.trustAnchorPath != null) {
-            validateFile(config.trustAnchorPath, "Trust anchor");
-            builder.serverTrustAnchor(Path.of(config.trustAnchorPath));
-        }
-
-        final SmartTokenClient client = builder.build();
+        final ClienteToken cliente = fabrica.criar(config);
 
         // Exibir configuração com o endpoint efetivamente usado
-        printInfo("Configuração:");
-        System.out.println("  Client ID:  " + config.clientId);
-        System.out.println("  Chave:      " + config.keyPath);
-        System.out.println("  Certificado:" + config.certPath);
-        System.out.println("  Scope:      " + config.scope);
-        System.out.println("  IG:         " + config.ig + " (versão " + config.igVersao + ")");
-        System.out.println("  TLS:        " + config.tlsProtocol);
-        System.out.println("  Algoritmo:  " + client.getJwtAlgorithm());
-        if (usandoDescoberta) {
-            System.out.println("  FHIR Base:  " + config.fhirBase);
-            System.out.println("  Endpoint:   " + client.getTokenEndpoint() + " (descoberto via .well-known)");
-        } else {
-            System.out.println("  Endpoint:   " + client.getTokenEndpoint());
-        }
-        System.out.println();
+        SaidaConsole.printConfiguracao(config, cliente.jwtAlgorithm(), cliente.tokenEndpoint());
 
-        printInfo("Obtendo token de acesso...");
+        SaidaConsole.printInfo("Obtendo token de acesso...");
         final Instant start = Instant.now();
 
-        final SmartTokenClient.TokenResponse resposta = client.obtainTokenResponse(config.scope);
-        final String token = resposta.accessToken();
+        final SmartTokenClient.TokenResponse resposta = cliente.obterToken(config.scope);
 
         final Duration elapsed = Duration.between(start, Instant.now());
 
         // Sucesso!
-        printSuccess("Token obtido com sucesso!");
-        System.out.println();
-
-        if (!config.quiet) {
-            printKeycloakResponse(resposta.rawJson());
-        }
-
-        System.out.println("  Tempo de resposta: " + elapsed.toMillis() + "ms");
-
-        if (config.quiet) {
-            final String preview = token.substring(0, Math.min(TOKEN_PREVIEW_CHARS, token.length()));
-            System.out.println("  Token (primeiros " + TOKEN_PREVIEW_CHARS + " chars): " + preview + "...");
-            System.out.println();
-            printInfo("Omita --quiet para ver detalhes do token.");
-        } else {
-            printTokenDetails(token);
-        }
-
-        System.out.println();
-        printSuccess("Credenciamento verificado. Acesso ao HubSaúde está funcionando.");
-    }
-
-    /**
-     * Exibe, no mesmo formato de tabela usado para o JWT, o corpo JSON da
-     * resposta do servidor de autorização (Keycloak). O valor de
-     * {@code access_token} (e de outros segredos, se presentes) é substituído
-     * por um placeholder para não vazar o token na saída.
-     *
-     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
-     *
-     * @param rawJson corpo JSON cru da resposta; pode ser {@code null} quando
-     *                o token foi servido a partir do cache
-     */
-    static void printKeycloakResponse(final String rawJson) {
-        if (rawJson == null || rawJson.isBlank()) {
-            return;
-        }
-        printInfo("Resposta do servidor de autorização (Keycloak):");
-        System.out.println();
-        System.out.print(JwtPayloadFormatter.formatAsTable(redactSecrets(rawJson), "    "));
-        System.out.println();
-    }
-
-    /**
-     * Substitui os valores de campos sensíveis ({@code access_token},
-     * {@code refresh_token}, {@code id_token}) por um placeholder.
-     *
-     * <p>Visibilidade de pacote para teste unitário direto (issue #986):
-     * a redação de segredos é lógica pura e sensível à segurança.</p>
-     *
-     * @param json JSON original
-     * @return JSON com os segredos redigidos
-     */
-    static String redactSecrets(final String json) {
-        return json.replaceAll("(\"(?:access_token|refresh_token|id_token)\"\\s*:\\s*\")[^\"]*\"", "$1<REDACTED>\"");
-    }
-
-    /**
-     * Exibe header, payload e conteúdo integral do token JWT.
-     *
-     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
-     *
-     * @param token JWT compacto ({@code header.payload.assinatura})
-     */
-    @SuppressFBWarnings(
-            value = "REC_CATCH_EXCEPTION",
-            justification = "Decodificação do JWT é best-effort para exibição; "
-                    + "qualquer falha cai no fallback amigável sem abortar.")
-    static void printTokenDetails(final String token) {
-        System.out.println();
-        printInfo("Detalhes do token JWT:");
-
-        try {
-            final String[] parts = token.split("\\.");
-            if (parts.length >= 2) {
-                final String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
-                final String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-
-                System.out.println();
-                System.out.println("  Header:");
-                System.out.print(JwtPayloadFormatter.formatAsTable(headerJson, "    "));
-
-                System.out.println();
-                System.out.println("  Payload:");
-                System.out.print(JwtPayloadFormatter.formatAsTable(payloadJson, "    "));
-            }
-        } catch (Exception e) {
-            System.out.println("  (Não foi possível decodificar o token)");
-        }
-
-        System.out.println();
-        System.out.println("  Token completo:");
-        for (int i = 0; i < token.length(); i += TOKEN_LINE_WIDTH) {
-            System.out.println("    " + token.substring(i, Math.min(i + TOKEN_LINE_WIDTH, token.length())));
-        }
-    }
-
-    /**
-     * Valida que o arquivo existe e é legível.
-     *
-     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
-     *
-     * @param path caminho do arquivo
-     * @param description descrição usada na mensagem de erro
-     * @throws IllegalArgumentException se o arquivo não existir ou não puder ser lido
-     */
-    static void validateFile(final String path, final String description) {
-        final Path file = Path.of(path);
-        if (!Files.exists(file)) {
-            throw new IllegalArgumentException(description + " não encontrado: " + path);
-        }
-        if (!Files.isReadable(file)) {
-            throw new IllegalArgumentException(description + " não pode ser lido: " + path);
-        }
-    }
-
-    /**
-     * Interpreta os argumentos de linha de comando e monta a configuração,
-     * aplicando os valores padrão e validando os parâmetros obrigatórios.
-     *
-     * <p>Visibilidade de pacote para teste unitário direto do parsing
-     * (issue #986), sem expor API pública.</p>
-     *
-     * @param args argumentos da linha de comando
-     * @return configuração montada
-     * @throws IllegalArgumentException se houver argumento desconhecido ou
-     *         parâmetro obrigatório ausente
-     */
-    static Config parseArgs(final String... args) {
-        final Config config = new Config();
-
-        for (final String arg : args) {
-            parseArgument(arg, config);
-        }
-
-        // Tentar ler senha do console se não fornecida e chave parecer criptografada
-        if (config.keyPassword == null && config.keyPath != null) {
-            config.keyPassword = promptPasswordIfNeeded(config.keyPath);
-        }
-
-        validateRequiredArgs(config);
-        return config;
-    }
-
-    @SuppressWarnings("PMD.CyclomaticComplexity") // simples cadeia if/else if para parsing CLI
-    private static void parseArgument(final String arg, final Config config) {
-        if (arg.startsWith("--client-id=")) {
-            config.clientId = extractValue(arg, "--client-id=");
-        } else if (arg.startsWith("--key=")) {
-            config.keyPath = extractValue(arg, "--key=");
-        } else if (arg.startsWith("--cert=")) {
-            config.certPath = extractValue(arg, "--cert=");
-        } else if (arg.startsWith("--ig=")) {
-            config.ig = extractValue(arg, "--ig=");
-        } else if (arg.startsWith("--ig-versao=")) {
-            config.igVersao = extractValue(arg, "--ig-versao=");
-        } else if (arg.startsWith("--endpoint=")) {
-            config.tokenEndpoint = extractValue(arg, "--endpoint=");
-        } else if (arg.startsWith("--fhir-base=")) {
-            config.fhirBase = extractValue(arg, "--fhir-base=");
-        } else if (arg.startsWith("--scope=")) {
-            config.scope = extractValue(arg, "--scope=");
-        } else if (arg.startsWith("--password=")) {
-            config.keyPassword = extractValue(arg, "--password=").toCharArray();
-        } else if (arg.startsWith("--tls=")) {
-            config.tlsProtocol = extractValue(arg, "--tls=");
-        } else if (arg.startsWith("--alg=")) {
-            config.jwtAlgorithm = extractValue(arg, "--alg=").toUpperCase(java.util.Locale.ROOT);
-        } else if (arg.startsWith("--kid=")) {
-            config.keyId = extractValue(arg, "--kid=");
-        } else if (arg.startsWith("--trust=")) {
-            config.trustAnchorPath = extractValue(arg, "--trust=");
-        } else if ("--quiet".equals(arg) || "-q".equals(arg)) {
-            config.quiet = true;
-        } else if (!"--help".equals(arg) && !"-h".equals(arg) && !"--debug".equals(arg)) {
-            throw new IllegalArgumentException("Argumento desconhecido: " + arg);
-        }
-    }
-
-    private static String extractValue(final String arg, final String prefix) {
-        return arg.substring(prefix.length());
-    }
-
-    private static void validateRequiredArgs(final Config config) {
-        if (config.clientId == null) {
-            throw new IllegalArgumentException("--client-id é obrigatório");
-        }
-        if (config.keyPath == null) {
-            throw new IllegalArgumentException("--key é obrigatório");
-        }
-        if (config.certPath == null) {
-            throw new IllegalArgumentException("--cert é obrigatório");
-        }
-        validateHubContextArgs(config);
-    }
-
-    /**
-     * Valida os parâmetros do claim {@code hub_ctx} (concern
-     * client-assertion-contexto-ig.md §3.4): {@code --ig} e
-     * {@code --ig-versao} são obrigatórios e devem seguir, respectivamente,
-     * o formato de alias de IG e SemVer completo MAJOR.MINOR.PATCH.
-     *
-     * @param config configuração parseada
-     * @throws IllegalArgumentException se ausentes ou fora do formato
-     */
-    private static void validateHubContextArgs(final Config config) {
-        if (config.ig == null) {
-            throw new IllegalArgumentException("--ig é obrigatório (alias do Guia de Implementação)");
-        }
-        if (!IG_PATTERN.matcher(config.ig).matches()) {
-            throw new IllegalArgumentException(
-                    "--ig inválido: '" + config.ig + "' (use minúsculas, dígitos e hífen, iniciando por letra)");
-        }
-        if (config.igVersao == null) {
-            throw new IllegalArgumentException("--ig-versao é obrigatório (versão SemVer do Guia de Implementação)");
-        }
-        if (!IG_VERSAO_PATTERN.matcher(config.igVersao).matches()) {
-            throw new IllegalArgumentException("--ig-versao inválido: '" + config.igVersao
-                    + "' (use SemVer completo MAJOR.MINOR.PATCH, ex.: 0.0.1)");
-        }
-    }
-
-    /**
-     * Tenta detectar se a chave é criptografada e solicita senha se necessário.
-     *
-     * @param keyPath caminho da chave
-     * @return senha digitada ou null se não necessária/não disponível
-     */
-    @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull") // null = sem senha, não senha vazia
-    @SuppressFBWarnings(
-            value = {"PZLA_PREFER_ZERO_LENGTH_ARRAYS", "REC_CATCH_EXCEPTION"},
-            justification = "null representa 'sem senha' (semântica distinta de "
-                    + "senha vazia char[0]); o catch genérico ignora falhas de "
-                    + "leitura, tratadas adiante na validação dos arquivos.")
-    private static char[] promptPasswordIfNeeded(final String keyPath) {
-        try {
-            final String content = Files.readString(Path.of(keyPath));
-            if (content.contains("ENCRYPTED")) {
-                final Console console = System.console();
-                if (console != null) {
-                    System.out.print("Chave criptografada detectada. Digite a senha: ");
-                    return console.readPassword();
-                }
-            }
-        } catch (Exception ignored) {
-            // Ignora erros de leitura aqui, serão tratados depois
-        }
-        return null;
-    }
-
-    /**
-     * Verifica se algum dos aliases da flag está presente nos argumentos.
-     *
-     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
-     *
-     * @param args argumentos da linha de comando
-     * @param flags aliases aceitos (ex.: {@code --quiet}, {@code -q})
-     * @return {@code true} se algum alias estiver presente
-     */
-    static boolean hasFlag(final String[] args, final String... flags) {
-        for (final String arg : args) {
-            for (final String flag : flags) {
-                if (arg.equals(flag)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Imprime o banner de abertura da ferramenta.
-     *
-     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
-     */
-    static void printBanner() {
-        System.out.println();
-        System.out.println(ANSI_BOLD + "╔═══════════════════════════════════════════════════════════╗" + ANSI_RESET);
-        System.out.println(ANSI_BOLD + "║     HubSaúde - Verificador de Acesso (Pós-Credenciamento) ║" + ANSI_RESET);
-        System.out.println(ANSI_BOLD + "╚═══════════════════════════════════════════════════════════╝" + ANSI_RESET);
-        System.out.println();
-    }
-
-    /**
-     * Imprime as instruções de uso (parâmetros, exemplos e códigos de saída).
-     *
-     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
-     */
-    static void printUsage() {
-        System.out.println("Verifica se o credenciamento foi aprovado obtendo um token de acesso.");
-        System.out.println();
-        System.out.println(ANSI_BOLD + "USO:" + ANSI_RESET);
-        System.out.println("  java -jar hubsaude-cliente-cli-X.Y.Z.jar \\");
-        System.out.println("      --client-id=<ID> --key=<CHAVE.PEM> --cert=<CERT.PEM> \\");
-        System.out.println("      --ig=<ALIAS> --ig-versao=<SEMVER> [opções]");
-        System.out.println();
-        System.out.println(ANSI_BOLD + "PARÂMETROS OBRIGATÓRIOS:" + ANSI_RESET);
-        System.out.println("  --client-id=<ID>      ID do cliente (fornecido no credenciamento)");
-        System.out.println("  --key=<PATH>          Caminho para a chave privada PEM");
-        System.out.println("  --cert=<PATH>         Caminho para o certificado PEM");
-        System.out.println("  --ig=<ALIAS>          Alias do Guia de Implementação (claim hub_ctx)");
-        System.out.println("  --ig-versao=<SEMVER>  Versão SemVer completa do IG (ex.: 0.0.1)");
-        System.out.println();
-        System.out.println(ANSI_BOLD + "PARÂMETROS OPCIONAIS:" + ANSI_RESET);
-        System.out.println("  --endpoint=<URL>      URL do token endpoint (desabilita descoberta)");
-        System.out.println("  --fhir-base=<URL>     URL base FHIR (padrão: " + DEFAULT_FHIR_BASE + ")");
-        System.out.println("  --scope=<SCOPE>       Scope a solicitar (padrão: " + DEFAULT_SCOPE + ")");
-        System.out.println("  --password=<SENHA>    Senha da chave privada (se criptografada)");
-        System.out.println("  --tls=<VERSAO>        Protocolo TLS: TLSv1.3 ou TLSv1.2 (padrão: " + DEFAULT_TLS + ")");
-        System.out.println("  --alg=<ALG>           Algoritmo JWT: RS384 ou ES384 (padrão: " + DEFAULT_ALG + ")");
-        System.out.println("  --kid=<KID>           Identificador da chave registrada no SA (header kid)");
-        System.out.println(
-                "  --trust=<PATH>        Certificado PEM do servidor " + "(trust anchor, para simulador/homologação)");
-        System.out.println("  --quiet, -q           Oculta os detalhes do token (exibidos por padrão)");
-        System.out.println("  --debug               Exibe detalhes técnicos (stack trace) em caso de erro");
-        System.out.println("  --help, -h            Exibe esta mensagem");
-        System.out.println();
-        System.out.println(ANSI_BOLD + "EXEMPLOS:" + ANSI_RESET);
-        System.out.println();
-        System.out.println("  # Verificação básica (descoberta automática de endpoint)");
-        System.out.println("  java -jar hubsaude-cliente-cli-0.0.0-SNAPSHOT.jar \\");
-        System.out.println("      --client-id=hs-12345678 \\");
-        System.out.println("      --key=minha-chave.pem \\");
-        System.out.println("      --cert=meu-certificado.pem \\");
-        System.out.println("      --ig=hemograma \\");
-        System.out.println("      --ig-versao=0.0.1");
-        System.out.println();
-        System.out.println("  # Com endpoint explícito, TLS 1.2 e algoritmo ES384");
-        System.out.println("  java -jar hubsaude-cliente-cli-0.0.0-SNAPSHOT.jar \\");
-        System.out.println("      --client-id=hs-12345678 \\");
-        System.out.println("      --key=minha-chave.pem \\");
-        System.out.println("      --cert=meu-certificado.pem \\");
-        System.out.println("      --ig=hemograma \\");
-        System.out.println("      --ig-versao=0.0.1 \\");
-        System.out.println("      --endpoint=https://fhir.saude.go.gov.br/auth/token \\");
-        System.out.println("      --alg=ES384 \\");
-        System.out.println("      --tls=TLSv1.2 \\");
-        System.out.println("      --quiet");
-        System.out.println();
-        System.out.println(ANSI_BOLD + "CÓDIGOS DE SAÍDA:" + ANSI_RESET);
-        System.out.println("  0  Sucesso - token obtido, credenciamento OK");
-        System.out.println("  1  Falha - erro de configuração ou acesso negado");
-        System.out.println();
-    }
-
-    /**
-     * Imprime mensagem informativa com o prefixo {@code [i]}.
-     *
-     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
-     *
-     * @param message mensagem a exibir
-     */
-    static void printInfo(final String message) {
-        System.out.println(ANSI_YELLOW + "[i] " + message + ANSI_RESET);
-    }
-
-    /**
-     * Imprime mensagem de sucesso com o prefixo {@code [OK]}.
-     *
-     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
-     *
-     * @param message mensagem a exibir
-     */
-    static void printSuccess(final String message) {
-        System.out.println(ANSI_GREEN + "[OK] " + message + ANSI_RESET);
-    }
-
-    /**
-     * Imprime mensagem de erro em {@code stderr} com o prefixo {@code [X]}.
-     *
-     * <p>Visibilidade de pacote para teste unitário direto (issue #986).</p>
-     *
-     * @param message mensagem a exibir
-     */
-    static void printError(final String message) {
-        System.err.println(ANSI_RED + "[X] " + message + ANSI_RESET);
-    }
-
-    /**
-     * Configuração parseada dos argumentos de linha de comando.
-     */
-    @SuppressWarnings({"checkstyle:VisibilityModifier", "PMD.DataClass"})
-    // package-private fields acessados apenas neste CLI e em seus testes
-    static final class Config {
-        String clientId;
-        String keyPath;
-        String certPath;
-        String ig;
-        String igVersao;
-        String tokenEndpoint;
-        String fhirBase = DEFAULT_FHIR_BASE;
-        String scope = DEFAULT_SCOPE;
-        char[] keyPassword;
-        String tlsProtocol = DEFAULT_TLS;
-        String jwtAlgorithm = DEFAULT_ALG;
-        String keyId;
-        String trustAnchorPath;
-        boolean quiet;
+        SaidaConsole.printResultado(resposta, elapsed, config.quiet);
     }
 }
