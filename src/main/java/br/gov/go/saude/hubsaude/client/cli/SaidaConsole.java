@@ -109,8 +109,12 @@ final class SaidaConsole {
         System.out.println("      --quiet");
         System.out.println();
         System.out.println(ANSI_BOLD + "CÓDIGOS DE SAÍDA:" + ANSI_RESET);
-        System.out.println("  0  Sucesso - token obtido, credenciamento OK");
-        System.out.println("  1  Falha - erro de configuração ou acesso negado");
+        System.out.println("  0  Sucesso - token obtido, credencial apta");
+        System.out.println("  3  Erro de uso - argumentos, arquivos ou configuração inválidos");
+        System.out.println("  4  Infraestrutura de rede - teste INCONCLUSIVO (discovery, timeout, 429, 5xx);");
+        System.out.println("     repita mais tarde");
+        System.out.println("  6  Credencial NÃO apta - rejeição determinística (HTTP 400/401 invalid_client");
+        System.out.println("     ou handshake mTLS); acione o processo de credenciamento");
         System.out.println();
     }
 
@@ -249,18 +253,48 @@ final class SaidaConsole {
 
     /**
      * Reporta uma falha de obtenção de token no stderr com mensagem curta e
-     * acionável; os detalhes técnicos (stack trace) são emitidos apenas em
-     * modo diagnóstico.
+     * acionável, seguida do veredito da classificação (código de saída da
+     * taxonomia da issue #817); os detalhes técnicos (stack trace) são
+     * emitidos apenas em modo diagnóstico.
      *
      * @param e falha ocorrida
+     * @param codigoSaida código de saída classificado
+     *        ({@link ClassificadorFalhas#classificar(Exception)})
      * @param debug se {@code true}, emite os detalhes técnicos
      */
-    static void reportarFalha(final Exception e, final boolean debug) {
+    static void reportarFalha(final Exception e, final int codigoSaida, final boolean debug) {
         printError("Falha ao obter token: " + e.getMessage());
+        printVeredito(codigoSaida);
         if (debug) {
             System.err.println(formatarStackTrace(e));
         } else {
             System.err.println(ANSI_YELLOW + "[i] Execute com --debug para exibir os detalhes técnicos." + ANSI_RESET);
+        }
+    }
+
+    /**
+     * Imprime no stderr o veredito correspondente ao código de saída da
+     * taxonomia da issue #817, orientando a ação da automação (acionar o
+     * credenciamento, reexecutar mais tarde ou corrigir a configuração).
+     *
+     * @param codigoSaida código de saída classificado
+     */
+    static void printVeredito(final int codigoSaida) {
+        switch (codigoSaida) {
+            case ClassificadorFalhas.CREDENCIAL_NAO_APTA ->
+                printError("Credencial NÃO apta: rejeição determinística do servidor de autorização"
+                        + " (HTTP 400/401 invalid_client ou handshake mTLS) — exit 6.");
+            case ClassificadorFalhas.INFRA ->
+                System.err.println(ANSI_YELLOW
+                        + "[i] Teste INCONCLUSIVO: falha de infraestrutura de rede — repita mais tarde (exit 4)."
+                        + ANSI_RESET);
+            case ClassificadorFalhas.USO ->
+                System.err.println(ANSI_YELLOW
+                        + "[i] Erro de uso: verifique os argumentos e arquivos informados (exit 3)."
+                        + ANSI_RESET);
+            default -> {
+                // Sucesso (0) não tem veredito de falha a imprimir
+            }
         }
     }
 

@@ -173,33 +173,60 @@ resposta do servidor de autorização e as tabelas do *header*/*payload* do JWT.
 ## Diagnóstico de falhas
 
 Em caso de erro, a ferramenta imprime uma mensagem prefixada por `[X]` em
-`stderr` e encerra com **código de saída 1**. Há duas categorias:
+`stderr`, seguida do **veredito da classificação**, e encerra com o código de
+saída correspondente (ver [Códigos de saída](#códigos-de-saída)):
 
-- **Erro de configuração** — arquivo ausente/ilegível, argumento desconhecido ou
-  parâmetro obrigatório faltando:
+- **Erro de uso/configuração (exit `3`)** — arquivo ausente/ilegível, argumento
+  desconhecido ou parâmetro obrigatório faltando:
 
   ```
   [X] Erro de configuração: Chave privada não encontrado: minha-chave.pem
+  [i] Erro de uso: verifique os argumentos e arquivos informados (exit 3).
   ```
 
-- **Falha ao obter token** — credenciamento não aprovado, `client-id` inválido,
-  problema de TLS/CA ou conectividade. Por padrão apenas a mensagem curta é
-  exibida; com `--debug`, os detalhes técnicos (*stack trace*) são exibidos
-  para facilitar o diagnóstico:
+- **Credencial NÃO apta (exit `6`)** — rejeição determinística do servidor de
+  autorização: HTTP 400/401 (`invalid_client`) ou certificado de cliente
+  rejeitado no mTLS:
+
+  ```
+  [X] Falha ao obter token: Falha ao obter token: HTTP 401 — {"error":"invalid_client"}
+  [X] Credencial NÃO apta: rejeição determinística do servidor de autorização (HTTP 400/401 invalid_client ou handshake mTLS) — exit 6.
+  ```
+
+- **Falha de infraestrutura de rede (exit `4`)** — conectividade, timeout,
+  descoberta `.well-known`, rate limit 429 ou 5xx do token endpoint. O teste é
+  **inconclusivo**: nada se pode afirmar sobre a credencial:
 
   ```
   [X] Falha ao obter token: <detalhe da causa>
-  [i] Execute com --debug para exibir os detalhes técnicos.
+  [i] Teste INCONCLUSIVO: falha de infraestrutura de rede — repita mais tarde (exit 4).
   ```
 
-  (o texto após os dois-pontos varia conforme a causa)
+Por padrão apenas a mensagem curta é exibida; com `--debug`, os detalhes
+técnicos (*stack trace*) são exibidos para facilitar o diagnóstico.
 
 ### Códigos de saída
 
-| Código | Significado                                      |
-| ------ | ------------------------------------------------ |
-| `0`    | Sucesso — token obtido, credenciamento OK        |
-| `1`    | Falha — erro de configuração ou acesso negado    |
+A ferramenta adota a mesma taxonomia do comando `hubsaude auth verify` do
+[`hubsaude-cli`](../hubsaude-cli) (spec §12.1), permitindo que automação
+(pipelines de credenciamento, smoke-tests agendados) distinga credencial
+rejeitada de falha de rede:
+
+| Código | Significado                                                     | Ação recomendada para automação                       |
+| ------ | --------------------------------------------------------------- | ----------------------------------------------------- |
+| `0`    | Sucesso — token obtido, credencial apta                         | Nenhuma                                                |
+| `3`    | Erro de uso — argumentos, arquivos ou configuração inválidos    | Corrigir a invocação/configuração                      |
+| `4`    | Infraestrutura de rede — teste **inconclusivo** (discovery, timeout, 429, 5xx) | Reexecutar mais tarde (retry/backoff)   |
+| `6`    | Credencial **não apta** — rejeição determinística (HTTP 400/401 `invalid_client` ou handshake mTLS) | Acionar o processo de credenciamento |
+
+> **Mudança de contrato (pré-1.0, issue #817):** até a release `0.3.22` toda
+> falha encerrava com exit `1`. A partir da release seguinte os códigos
+> `3`/`4`/`6` substituem o `1` — ajuste scripts que testavam `$? -eq 1`.
+>
+> **Classificação fail-safe:** falhas que não podem ser atribuídas com certeza
+> determinística à credencial (ex.: mensagens ambíguas da biblioteca) são
+> classificadas como `4` (inconclusivo) — a ferramenta jamais declara uma
+> credencial inapta sem evidência determinística.
 
 ---
 

@@ -44,9 +44,17 @@ import br.gov.go.saude.hubsaude.client.SmartTokenClient;
  *   <li>{@code --debug} — Exibe detalhes técnicos (stack trace) em caso de erro</li>
  * </ul>
  *
+ * <h2>Códigos de saída</h2>
+ * <p>A ferramenta adota a taxonomia do {@code hubsaude-cli} para o caso de
+ * uso {@code auth verify} (issue #817): {@code 0} sucesso (credencial apta),
+ * {@code 3} erro de uso/configuração, {@code 4} falha de infraestrutura de
+ * rede (teste inconclusivo) e {@code 6} credencial não apta (rejeição
+ * determinística). Ver {@link ClassificadorFalhas}.</p>
+ *
  * <p>As responsabilidades desta classe são apenas de orquestração; o parsing
  * e a validação dos argumentos vivem em {@link AnalisadorArgumentos}, a
- * formatação de saída em {@link SaidaConsole} e a chamada ao
+ * formatação de saída em {@link SaidaConsole}, a classificação das falhas
+ * em código de saída em {@link ClassificadorFalhas} e a chamada ao
  * {@code SmartTokenClient} atrás da costura {@link ClienteToken}
  * (issue #1034).</p>
  */
@@ -57,28 +65,63 @@ public final class VerificarAcesso {
     }
 
     /**
-     * Ponto de entrada da aplicação.
+     * Ponto de entrada da aplicação: delega a {@link #executar} e converte
+     * o código retornado em código de processo.
      *
      * @param args argumentos de linha de comando
      */
     public static void main(final String[] args) {
+        System.exit(executar(args, ClienteToken::conectar));
+    }
+
+    /**
+     * Executa o fluxo completo da CLI e decide o código de saída conforme a
+     * taxonomia da issue #817 — método puro em relação a
+     * {@code System.exit}, para que o contrato de códigos de saída seja
+     * testável por unidade com uma {@link ClienteToken.Fabrica} fake.
+     *
+     * @param args argumentos de linha de comando
+     * @param fabrica fábrica do cliente de token
+     * @return código de saída do processo ({@link ClassificadorFalhas#SUCESSO},
+     *         {@link ClassificadorFalhas#USO}, {@link ClassificadorFalhas#INFRA}
+     *         ou {@link ClassificadorFalhas#CREDENCIAL_NAO_APTA})
+     */
+    static int executar(final String[] args, final ClienteToken.Fabrica fabrica) {
         SaidaConsole.printBanner();
 
         if (args.length == 0 || AnalisadorArgumentos.hasFlag(args, "--help", "-h")) {
             SaidaConsole.printUsage();
-            System.exit(0);
+            return ClassificadorFalhas.SUCESSO;
         }
 
         try {
             final AnalisadorArgumentos.Config config = AnalisadorArgumentos.parseArgs(args);
-            verificarAcesso(config, ClienteToken::conectar);
+            verificarAcesso(config, fabrica);
+            return ClassificadorFalhas.SUCESSO;
         } catch (IllegalArgumentException e) {
             SaidaConsole.printError("Erro de configuração: " + e.getMessage());
-            System.exit(1);
+            SaidaConsole.printVeredito(ClassificadorFalhas.USO);
+            return ClassificadorFalhas.USO;
         } catch (Exception e) {
-            SaidaConsole.reportarFalha(e, AnalisadorArgumentos.hasFlag(args, "--debug"));
-            System.exit(1);
+            return reportarEClassificar(e, AnalisadorArgumentos.hasFlag(args, "--debug"));
         }
+    }
+
+    /**
+     * Restaura a flag de interrupção quando aplicável, classifica a falha
+     * na taxonomia da issue #817 e a reporta no console com o veredito.
+     *
+     * @param e falha capturada
+     * @param debug se {@code true}, emite os detalhes técnicos
+     * @return código de saída classificado
+     */
+    private static int reportarEClassificar(final Exception e, final boolean debug) {
+        if (e instanceof InterruptedException) {
+            Thread.currentThread().interrupt();
+        }
+        final int codigo = ClassificadorFalhas.classificar(e);
+        SaidaConsole.reportarFalha(e, codigo, debug);
+        return codigo;
     }
 
     /**

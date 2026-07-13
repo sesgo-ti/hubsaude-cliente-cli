@@ -113,7 +113,11 @@ class SaidaConsoleTest {
                 .contains("--quiet, -q")
                 .contains("--help, -h")
                 .contains("EXEMPLOS:")
-                .contains("CÓDIGOS DE SAÍDA:");
+                .contains("CÓDIGOS DE SAÍDA:")
+                .contains("0  Sucesso")
+                .contains("3  Erro de uso")
+                .contains("4  Infraestrutura de rede")
+                .contains("6  Credencial NÃO apta");
     }
 
     @Test
@@ -262,8 +266,8 @@ class SaidaConsoleTest {
 
     @Test
     void semDebugEmiteMensagemCurtaSemStackTrace() {
-        final String saida =
-                capturarStderr(() -> SaidaConsole.reportarFalha(new RuntimeException("endpoint inacessível"), false));
+        final String saida = capturarStderr(() -> SaidaConsole.reportarFalha(
+                new RuntimeException("endpoint inacessível"), ClassificadorFalhas.INFRA, false));
 
         assertThat(saida)
                 .contains("Falha ao obter token: endpoint inacessível")
@@ -274,8 +278,8 @@ class SaidaConsoleTest {
 
     @Test
     void comDebugEmiteDetalhesTecnicos() {
-        final String saida =
-                capturarStderr(() -> SaidaConsole.reportarFalha(new RuntimeException("endpoint inacessível"), true));
+        final String saida = capturarStderr(() -> SaidaConsole.reportarFalha(
+                new RuntimeException("endpoint inacessível"), ClassificadorFalhas.INFRA, true));
 
         assertThat(saida)
                 .contains("Falha ao obter token: endpoint inacessível")
@@ -287,9 +291,40 @@ class SaidaConsoleTest {
     void comDebugEmiteCadeiaDeCausas() {
         final Exception falha = new IllegalStateException("erro externo", new IllegalArgumentException("causa raiz"));
 
-        final String saida = capturarStderr(() -> SaidaConsole.reportarFalha(falha, true));
+        final String saida = capturarStderr(() -> SaidaConsole.reportarFalha(falha, ClassificadorFalhas.USO, true));
 
         assertThat(saida).contains("erro externo").contains("Causado por: ").contains("causa raiz");
+    }
+
+    // ------------------------------------------------------------------
+    // printVeredito: veredito da classificação por código de saída (#817)
+    // ------------------------------------------------------------------
+
+    @Test
+    void vereditoDeCredencialNaoAptaOrientaOCredenciamento() {
+        final String saida = capturarStderr(() -> SaidaConsole.printVeredito(ClassificadorFalhas.CREDENCIAL_NAO_APTA));
+
+        assertThat(saida).contains("Credencial NÃO apta").contains("exit 6");
+    }
+
+    @Test
+    void vereditoDeInfraOrientaReexecucao() {
+        final String saida = capturarStderr(() -> SaidaConsole.printVeredito(ClassificadorFalhas.INFRA));
+
+        assertThat(saida).contains("INCONCLUSIVO").contains("repita mais tarde").contains("exit 4");
+    }
+
+    @Test
+    void vereditoDeUsoOrientaCorrecaoDosArgumentos() {
+        final String saida = capturarStderr(() -> SaidaConsole.printVeredito(ClassificadorFalhas.USO));
+
+        assertThat(saida).contains("Erro de uso").contains("exit 3");
+    }
+
+    @Test
+    void sucessoNaoEmiteVeredito() {
+        assertThat(capturarStderr(() -> SaidaConsole.printVeredito(ClassificadorFalhas.SUCESSO)))
+                .isEmpty();
     }
 
     // ------------------------------------------------------------------
