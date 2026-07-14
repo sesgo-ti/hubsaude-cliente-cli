@@ -6,6 +6,7 @@
 package br.gov.go.saude.hubsaude.client.cli;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import java.io.IOException;
 import java.net.http.HttpTimeoutException;
@@ -158,6 +159,30 @@ class ClassificadorFalhasTest {
         // de erro que apenas mencione "HTTP 401" não é evidência determinística
         final SmartTokenException falha =
                 new SmartTokenException("Falha ao obter smart-configuration (502): upstream retornou HTTP 401");
+
+        assertThat(ClassificadorFalhas.classificar(falha)).isEqualTo(ClassificadorFalhas.INFRA);
+    }
+
+    // ------------------------------------------------------------------
+    // Status HTTP malformado na mensagem (entrada externa) — issue #1407
+    // ------------------------------------------------------------------
+
+    @ParameterizedTest
+    @ValueSource(strings = {"4o1", "abc", "40", "", "-401", " 401"})
+    void statusHttpMalformadoNaoLancaExcecaoEClassificaComoInfra(final String status) {
+        // Mensagem de resposta externa com status não numérico ou fora do
+        // formato de três dígitos: jamais NumberFormatException; fail-safe
+        final SmartTokenException falha = new SmartTokenException("Falha ao obter token: HTTP " + status + " — corpo");
+
+        assertThatCode(() -> ClassificadorFalhas.classificar(falha)).doesNotThrowAnyException();
+        assertThat(ClassificadorFalhas.classificar(falha)).isEqualTo(ClassificadorFalhas.INFRA);
+    }
+
+    @Test
+    void statusHttpComDigitosExtrasNaoClassificaComoCredencialNaoApta() {
+        // "4013" não é um status de três dígitos; o prefixo "401" não deve
+        // ser interpretado como rejeição determinística da credencial
+        final SmartTokenException falha = new SmartTokenException("Falha ao obter token: HTTP 4013 — corpo");
 
         assertThat(ClassificadorFalhas.classificar(falha)).isEqualTo(ClassificadorFalhas.INFRA);
     }

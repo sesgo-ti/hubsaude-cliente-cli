@@ -57,8 +57,7 @@ final class JwtPayloadFormatter {
         final int maxKeyLen = computeMaxKeyLength(fields);
         final StringBuilder out = new StringBuilder();
         for (Map.Entry<String, String> entry : fields.entrySet()) {
-            out.append(String.format("%s%-" + maxKeyLen + "s : %s%n",
-                    indent, entry.getKey(), entry.getValue()));
+            out.append(String.format("%s%-" + maxKeyLen + "s : %s%n", indent, entry.getKey(), entry.getValue()));
         }
         return out.toString();
     }
@@ -122,16 +121,13 @@ final class JwtPayloadFormatter {
         return result;
     }
 
-    private static void requireChar(final String text, final int pos,
-            final char expected) {
+    private static void requireChar(final String text, final int pos, final char expected) {
         if (pos >= text.length() || text.charAt(pos) != expected) {
-            throw new IllegalArgumentException(
-                    "esperado '" + expected + "' em " + pos);
+            throw new IllegalArgumentException("esperado '" + expected + "' em " + pos);
         }
     }
 
-    private static int skipWhitespace(final String text, final int from,
-            final int end) {
+    private static int skipWhitespace(final String text, final int from, final int end) {
         int pos = from;
         while (pos < end && Character.isWhitespace(text.charAt(pos))) {
             pos++;
@@ -199,14 +195,11 @@ final class JwtPayloadFormatter {
     }
 
     private static boolean isScalarTerminator(final char character) {
-        return character == ',' || character == '}' || character == ']'
-                || Character.isWhitespace(character);
+        return character == ',' || character == '}' || character == ']' || Character.isWhitespace(character);
     }
 
     private static String renderValue(final String raw) {
-        if (raw.length() >= MIN_OBJECT_LENGTH
-                && raw.charAt(0) == '"'
-                && raw.charAt(raw.length() - 1) == '"') {
+        if (raw.length() >= MIN_OBJECT_LENGTH && raw.charAt(0) == '"' && raw.charAt(raw.length() - 1) == '"') {
             return unescape(raw.substring(1, raw.length() - 1));
         }
         return raw;
@@ -227,17 +220,33 @@ final class JwtPayloadFormatter {
         return out.toString();
     }
 
-    private static int appendEscape(final String text, final int pos,
-            final StringBuilder out) {
+    /**
+     * Interpreta um escape iniciado em {@code pos} e o anexa a {@code out},
+     * devolvendo quantos caracteres foram consumidos.
+     *
+     * <p>Escape Unicode ({@code \\uXXXX}) com dígitos hexadecimais
+     * malformados — possível em payload JWT de origem externa — não
+     * propaga {@link NumberFormatException} (CodeQL
+     * {@code java/uncaught-number-format-exception}, issue #1407): degrada
+     * para o tratamento leniente de escape simples, preservando o texto
+     * bruto, como já ocorre com escapes desconhecidos.</p>
+     */
+    private static int appendEscape(final String text, final int pos, final StringBuilder out) {
         final char next = text.charAt(pos + 1);
         if (next == 'u' && pos + UNICODE_ESCAPE_TOTAL < text.length()) {
-            final String hex = text.substring(
-                    pos + UNICODE_HEX_START_OFFSET,
-                    pos + UNICODE_HEX_END_OFFSET);
-            out.append((char) Integer.parseInt(hex, HEX_RADIX));
-            return UNICODE_ESCAPE_CONSUMED;
+            final String hex = text.substring(pos + UNICODE_HEX_START_OFFSET, pos + UNICODE_HEX_END_OFFSET);
+            try {
+                out.append((char) Integer.parseInt(hex, HEX_RADIX));
+                return UNICODE_ESCAPE_CONSUMED;
+            } catch (NumberFormatException ignored) {
+                return appendSimpleEscape(next, out);
+            }
         }
-        out.append(decodeSimpleEscape(next));
+        return appendSimpleEscape(next, out);
+    }
+
+    private static int appendSimpleEscape(final char escaped, final StringBuilder out) {
+        out.append(decodeSimpleEscape(escaped));
         return SIMPLE_ESCAPE_CONSUMED;
     }
 

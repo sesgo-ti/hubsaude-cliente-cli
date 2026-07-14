@@ -63,16 +63,26 @@ final class ClassificadorFalhas {
      */
     static final int CREDENCIAL_NAO_APTA = 6;
 
-    private static final int HTTP_BAD_REQUEST = 400;
-    private static final int HTTP_UNAUTHORIZED = 401;
+    /** Status HTTP 400 (Bad Request) do token endpoint, como texto. */
+    private static final String HTTP_BAD_REQUEST = "400";
+
+    /** Status HTTP 401 (Unauthorized) do token endpoint, como texto. */
+    private static final String HTTP_UNAUTHORIZED = "401";
 
     /**
      * Formato fixo da mensagem produzida pela biblioteca para resposta
      * HTTP ≠ 200 do token endpoint ({@code SmartTokenClient.buildHttpErrorMessage}).
      * Apenas o token endpoint gera esse prefixo; a descoberta
      * {@code .well-known} usa outro texto e permanece classificada como infra.
+     *
+     * <p>O grupo captura exatamente três dígitos — o lookahead negativo
+     * rejeita dígitos extras (ex.: {@code HTTP 4013}) — e é comparado
+     * textualmente com {@link #HTTP_BAD_REQUEST}/{@link #HTTP_UNAUTHORIZED},
+     * sem conversão numérica da mensagem (entrada externa): elimina a
+     * {@link NumberFormatException} por construção (CodeQL
+     * {@code java/uncaught-number-format-exception}, issue #1407).</p>
      */
-    private static final Pattern HTTP_TOKEN_ENDPOINT = Pattern.compile("^Falha ao obter token: HTTP (\\d{3})");
+    private static final Pattern HTTP_TOKEN_ENDPOINT = Pattern.compile("^Falha ao obter token: HTTP (\\d{3})(?!\\d)");
 
     /**
      * Prefixo fixo do diagnóstico da biblioteca para conexão TLS abortada
@@ -120,6 +130,11 @@ final class ClassificadorFalhas {
      * outra mensagem (descoberta, parsing de PEM, tentativas esgotadas)
      * classificam como {@link #INFRA}.
      *
+     * <p>A comparação do status é textual — nunca lança
+     * {@link NumberFormatException} para mensagem malformada; status que
+     * não case exatamente com três dígitos degrada fail-safe para
+     * {@link #INFRA} (issue #1407).</p>
+     *
      * @param mensagem mensagem da exceção (pode ser {@code null})
      * @return código de saída
      */
@@ -132,8 +147,8 @@ final class ClassificadorFalhas {
         }
         final Matcher matcher = HTTP_TOKEN_ENDPOINT.matcher(mensagem);
         if (matcher.find()) {
-            final int status = Integer.parseInt(matcher.group(1));
-            if (status == HTTP_BAD_REQUEST || status == HTTP_UNAUTHORIZED) {
+            final String status = matcher.group(1);
+            if (HTTP_BAD_REQUEST.equals(status) || HTTP_UNAUTHORIZED.equals(status)) {
                 return CREDENCIAL_NAO_APTA;
             }
         }

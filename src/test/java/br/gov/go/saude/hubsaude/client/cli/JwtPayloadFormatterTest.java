@@ -178,4 +178,48 @@ class JwtPayloadFormatterTest {
 
         assertThat(saida).isEqualTo(INDENT + json);
     }
+
+    // ------------------------------------------------------------------
+    // Escape \\uXXXX com hexadecimal malformado (entrada externa) — #1407
+    // ------------------------------------------------------------------
+
+    @Test
+    void naoDeveLancarExcecaoParaEscapeUnicodeComHexMalformado() {
+        // Payload JWT de origem externa com \\uZZZZ: jamais NumberFormatException
+        final String json = "{\"txt\":\"a\\uZZZZb\"}";
+
+        assertThatCode(() -> JwtPayloadFormatter.formatAsTable(json, INDENT)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void deveDegradarEscapeUnicodeMalformadoParaTextoBruto() {
+        // Hex inválido degrada como escape desconhecido: preserva "uGGGG",
+        // consumindo apenas a barra, e as demais claims seguem formatadas
+        final String json = "{\"txt\":\"a\\uGGGGb\",\"sub\":\"hs-1\"}";
+
+        final String saida = JwtPayloadFormatter.formatAsTable(json, INDENT);
+
+        assertThat(saida.lines()).containsExactly("    txt : auGGGGb", "    sub : hs-1");
+    }
+
+    @Test
+    void deveDegradarEscapeUnicodeComHexParcialmenteValido() {
+        // Três dígitos válidos e um inválido ("00GA"): o bloco inteiro é
+        // tratado lenientemente, sem conversão parcial
+        final String json = "{\"txt\":\"x\\u00GAy\"}";
+
+        final String saida = JwtPayloadFormatter.formatAsTable(json, INDENT);
+
+        assertThat(saida).contains("xu00GAy");
+    }
+
+    @Test
+    void deveManterEscapeUnicodeValidoAposCorrecaoDoMalformado() {
+        // Happy path preservado: \\u00e7 continua interpretado como "ç"
+        final String json = "{\"txt\":\"cita\\u00e7\\u00e3o\"}";
+
+        final String saida = JwtPayloadFormatter.formatAsTable(json, INDENT);
+
+        assertThat(saida).contains("cita\u00e7\u00e3o");
+    }
 }
