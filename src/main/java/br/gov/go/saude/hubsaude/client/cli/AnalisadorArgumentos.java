@@ -166,7 +166,8 @@ final class AnalisadorArgumentos {
      * @param keyPath caminho da chave
      * @return senha digitada ou null se não necessária/não disponível
      */
-    @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull") // null = sem senha, não senha vazia
+    @SuppressWarnings({"PMD.ReturnEmptyCollectionRatherThanNull", "PMD.SystemPrintln"})
+    // null = sem senha, não senha vazia; prompt interativo no console é a UI desta CLI
     @SuppressFBWarnings(
             value = {"PZLA_PREFER_ZERO_LENGTH_ARRAYS", "REC_CATCH_EXCEPTION"},
             justification = "null representa 'sem senha' (semântica distinta de "

@@ -24,6 +24,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * segredos são redigidos antes de qualquer impressão
  * ({@link #redactSecrets(String)}).</p>
  */
+@SuppressWarnings("PMD.SystemPrintln") // console é a interface de usuário desta CLI (sem logger na saída ao operador)
 final class SaidaConsole {
 
     private static final int TOKEN_PREVIEW_CHARS = 50;
