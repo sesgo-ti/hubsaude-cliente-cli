@@ -15,7 +15,7 @@
     <version>${revision}</version>
 
     <properties>
-        <revision>0.3.25-SNAPSHOT</revision>
+        <revision>0.3.26-SNAPSHOT</revision>
     </properties>
 
     <name>HubSaúde Cliente CLI</name>
@@ -49,13 +49,40 @@
         </developer>
     </developers>
 
+    <dependencyManagement>
+        <dependencies>
+            <!--
+                Override temporário do triplete BouncyCastle: o
+                hubsaude-cliente-java 0.3.22 usa 1.85, enquanto o BOM
+                hubsaude-dependencies 0.4.27 (via parent) ainda gerencia
+                1.84 — o RequireUpperBoundDeps rejeita o downgrade.
+                Remover quando o BOM alinhar em >= 1.85.
+            -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>1.85</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>1.85</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>1.85</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <!-- Biblioteca cliente: contém SmartTokenClient e demais classes
              (hubContext()/RS384, issue #361), resolvida do GitHub Packages. -->
         <dependency>
             <groupId>br.gov.go.saude.hubsaude</groupId>
             <artifactId>hubsaude-cliente-java</artifactId>
-            <version>0.3.21</version>
+            <version>0.3.22</version>
         </dependency>
 
         <!-- SLF4J Simple: implementação minimalista para CLI -->
