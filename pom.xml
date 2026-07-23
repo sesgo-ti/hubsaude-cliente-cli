@@ -16,6 +16,10 @@
 
     <properties>
         <revision>0.3.26-SNAPSHOT</revision>
+        <!-- Mutation testing não se aplica: wrapper picocli fino sobre a
+             biblioteca hubsaude-cliente-java (onde vive a lógica mutável);
+             aqui restam wiring de CLI e I/O de console (issue #331). -->
+        <pitest.skip>true</pitest.skip>
     </properties>
 
     <name>HubSaúde Cliente CLI</name>
