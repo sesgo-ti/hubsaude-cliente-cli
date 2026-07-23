@@ -9,6 +9,8 @@ import java.io.Console;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
+import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
 
 import org.jspecify.annotations.Nullable;
@@ -55,6 +57,53 @@ final class AnalisadorArgumentos {
      */
     private static final Pattern IG_VERSAO_PATTERN = Pattern.compile("^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$");
 
+    /**
+     * Tabela de opções {@code --prefixo=valor} e seus setters: substitui a
+     * antiga cadeia if/else-if (CognitiveComplexity 17) por dispatch
+     * declarativo — os prefixos são disjuntos entre si, então a ordem de
+     * iteração é irrelevante.
+     */
+    private static final Map<String, BiConsumer<Config, String>> OPCOES_COM_VALOR = Map.ofEntries(
+            Map.entry("--client-id=", (config, valor) -> {
+                config.clientId = valor;
+            }),
+            Map.entry("--key=", (config, valor) -> {
+                config.keyPath = valor;
+            }),
+            Map.entry("--cert=", (config, valor) -> {
+                config.certPath = valor;
+            }),
+            Map.entry("--ig=", (config, valor) -> {
+                config.ig = valor;
+            }),
+            Map.entry("--ig-versao=", (config, valor) -> {
+                config.igVersao = valor;
+            }),
+            Map.entry("--endpoint=", (config, valor) -> {
+                config.tokenEndpoint = valor;
+            }),
+            Map.entry("--fhir-base=", (config, valor) -> {
+                config.fhirBase = valor;
+            }),
+            Map.entry("--scope=", (config, valor) -> {
+                config.scope = valor;
+            }),
+            Map.entry("--password=", (config, valor) -> {
+                config.keyPassword = valor.toCharArray();
+            }),
+            Map.entry("--tls=", (config, valor) -> {
+                config.tlsProtocol = valor;
+            }),
+            Map.entry("--alg=", (config, valor) -> {
+                config.jwtAlgorithm = valor.toUpperCase(Locale.ROOT);
+            }),
+            Map.entry("--kid=", (config, valor) -> {
+                config.keyId = valor;
+            }),
+            Map.entry("--trust=", (config, valor) -> {
+                config.trustAnchorPath = valor;
+            }));
+
     private AnalisadorArgumentos() {
         // Utilitário não instanciável
     }
@@ -84,35 +133,14 @@ final class AnalisadorArgumentos {
         return config;
     }
 
-    @SuppressWarnings("PMD.CyclomaticComplexity") // simples cadeia if/else if para parsing CLI
     private static void parseArgument(final String arg, final Config config) {
-        if (arg.startsWith("--client-id=")) {
-            config.clientId = extractValue(arg, "--client-id=");
-        } else if (arg.startsWith("--key=")) {
-            config.keyPath = extractValue(arg, "--key=");
-        } else if (arg.startsWith("--cert=")) {
-            config.certPath = extractValue(arg, "--cert=");
-        } else if (arg.startsWith("--ig=")) {
-            config.ig = extractValue(arg, "--ig=");
-        } else if (arg.startsWith("--ig-versao=")) {
-            config.igVersao = extractValue(arg, "--ig-versao=");
-        } else if (arg.startsWith("--endpoint=")) {
-            config.tokenEndpoint = extractValue(arg, "--endpoint=");
-        } else if (arg.startsWith("--fhir-base=")) {
-            config.fhirBase = extractValue(arg, "--fhir-base=");
-        } else if (arg.startsWith("--scope=")) {
-            config.scope = extractValue(arg, "--scope=");
-        } else if (arg.startsWith("--password=")) {
-            config.keyPassword = extractValue(arg, "--password=").toCharArray();
-        } else if (arg.startsWith("--tls=")) {
-            config.tlsProtocol = extractValue(arg, "--tls=");
-        } else if (arg.startsWith("--alg=")) {
-            config.jwtAlgorithm = extractValue(arg, "--alg=").toUpperCase(Locale.ROOT);
-        } else if (arg.startsWith("--kid=")) {
-            config.keyId = extractValue(arg, "--kid=");
-        } else if (arg.startsWith("--trust=")) {
-            config.trustAnchorPath = extractValue(arg, "--trust=");
-        } else if ("--quiet".equals(arg) || "-q".equals(arg)) {
+        for (final Map.Entry<String, BiConsumer<Config, String>> opcao : OPCOES_COM_VALOR.entrySet()) {
+            if (arg.startsWith(opcao.getKey())) {
+                opcao.getValue().accept(config, extractValue(arg, opcao.getKey()));
+                return;
+            }
+        }
+        if ("--quiet".equals(arg) || "-q".equals(arg)) {
             config.quiet = true;
         } else if (!"--help".equals(arg) && !"-h".equals(arg) && !"--debug".equals(arg)) {
             throw new IllegalArgumentException("Argumento desconhecido: " + arg);
