@@ -77,6 +77,18 @@
     </dependencyManagement>
 
     <dependencies>
+        <!--
+            JSpecify (REC-09/ADR-67): anotações de nulidade
+            (@NullMarked/@Nullable) dos pacotes null-safe. Annotation-only,
+            sem transitivas; escopo compile (retenção RUNTIME, parte da
+            API pública). Versão governada pelos BOMs
+            (hubsaude-parent/hubsaude-dependencies), conforme ADR-80.
+        -->
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+        </dependency>
+
         <!-- Biblioteca cliente: contém SmartTokenClient e demais classes
              (hubContext()/RS384, issue #361), resolvida do GitHub Packages. -->
         <dependency>

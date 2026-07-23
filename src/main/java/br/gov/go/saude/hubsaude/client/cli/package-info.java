@@ -16,5 +16,17 @@
  * (mapeamento de falhas em códigos de saída estáveis, contrato para
  * automação), {@code JwtPayloadFormatter} e {@code SaidaConsole}
  * (apresentação legível do resultado ao operador do estabelecimento).</p>
+ *
+ * <h2>Null-safety (REC-09/ADR-67)</h2>
+ *
+ * <p>Pacote anotado com {@link org.jspecify.annotations.NullMarked}:
+ * todo tipo é <strong>não-nulo por padrão</strong>; exceções são
+ * marcadas explicitamente com
+ * {@link org.jspecify.annotations.Nullable}. A conformidade é
+ * verificada pelo NullAway no profile Maven {@code quality} do
+ * hubsaude-parent (ADR-67/ADR-80).</p>
  */
+@NullMarked
 package br.gov.go.saude.hubsaude.client.cli;
+
+import org.jspecify.annotations.NullMarked;

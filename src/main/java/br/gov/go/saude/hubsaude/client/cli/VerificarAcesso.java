@@ -8,6 +8,7 @@ package br.gov.go.saude.hubsaude.client.cli;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 
 import br.gov.go.saude.hubsaude.client.SmartTokenClient;
 
@@ -140,9 +141,11 @@ public final class VerificarAcesso {
      */
     static void verificarAcesso(final AnalisadorArgumentos.Config config, final ClienteToken.Fabrica fabrica)
             throws IOException, InterruptedException {
-        // Validar arquivos primeiro
-        AnalisadorArgumentos.validateFile(config.keyPath, "Chave privada");
-        AnalisadorArgumentos.validateFile(config.certPath, "Certificado");
+        // Validar arquivos primeiro (parse já garantiu presença; revalida a borda)
+        final String keyPath = Objects.requireNonNull(config.keyPath, "--key é obrigatório");
+        final String certPath = Objects.requireNonNull(config.certPath, "--cert é obrigatório");
+        AnalisadorArgumentos.validateFile(keyPath, "Chave privada");
+        AnalisadorArgumentos.validateFile(certPath, "Certificado");
 
         final ClienteToken cliente = fabrica.criar(config);
 

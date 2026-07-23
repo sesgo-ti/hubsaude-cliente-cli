@@ -8,6 +8,8 @@ package br.gov.go.saude.hubsaude.client.cli;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jspecify.annotations.Nullable;
+
 import br.gov.go.saude.hubsaude.client.SigningException;
 import br.gov.go.saude.hubsaude.client.SmartTokenException;
 
@@ -138,7 +140,7 @@ final class ClassificadorFalhas {
      * @param mensagem mensagem da exceção (pode ser {@code null})
      * @return código de saída
      */
-    private static int classificarSmartToken(final String mensagem) {
+    private static int classificarSmartToken(final @Nullable String mensagem) {
         if (mensagem == null) {
             return INFRA;
         }

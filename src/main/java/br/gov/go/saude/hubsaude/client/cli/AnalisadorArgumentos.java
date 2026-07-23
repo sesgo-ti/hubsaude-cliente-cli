@@ -11,6 +11,8 @@ import java.nio.file.Path;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.jspecify.annotations.Nullable;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
@@ -173,7 +175,7 @@ final class AnalisadorArgumentos {
             justification = "null representa 'sem senha' (semântica distinta de "
                     + "senha vazia char[0]); o catch genérico ignora falhas de "
                     + "leitura, tratadas adiante na validação dos arquivos.")
-    private static char[] promptPasswordIfNeeded(final String keyPath) {
+    private static char @Nullable [] promptPasswordIfNeeded(final String keyPath) {
         try {
             final String content = Files.readString(Path.of(keyPath));
             if (content.contains("ENCRYPTED")) {
@@ -230,19 +232,36 @@ final class AnalisadorArgumentos {
     @SuppressWarnings({"checkstyle:VisibilityModifier", "PMD.DataClass"})
     // package-private fields acessados apenas neste CLI e em seus testes
     static final class Config {
+        @Nullable
         String clientId;
+
+        @Nullable
         String keyPath;
+
+        @Nullable
         String certPath;
+
+        @Nullable
         String ig;
+
+        @Nullable
         String igVersao;
+
+        @Nullable
         String tokenEndpoint;
+
         String fhirBase = DEFAULT_FHIR_BASE;
         String scope = DEFAULT_SCOPE;
-        char[] keyPassword;
+        char @Nullable [] keyPassword;
         String tlsProtocol = DEFAULT_TLS;
         String jwtAlgorithm = DEFAULT_ALG;
+
+        @Nullable
         String keyId;
+
+        @Nullable
         String trustAnchorPath;
+
         boolean quiet;
     }
 }
