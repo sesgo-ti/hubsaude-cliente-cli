@@ -15,7 +15,7 @@
     <version>${revision}</version>
 
     <properties>
-        <revision>0.3.26-SNAPSHOT</revision>
+        <revision>0.3.27-SNAPSHOT</revision>
         <!-- Mutation testing não se aplica: wrapper picocli fino sobre a
              biblioteca hubsaude-cliente-java (onde vive a lógica mutável);
              aqui restam wiring de CLI e I/O de console (issue #331). -->
@@ -53,6 +53,28 @@
         </developer>
     </developers>
 
+    <!-- Override pontual do BOM (hubsaude-dependencies gerencia Jackson
+         3.1.4, alinhado ao Spring Boot): o hubsaude-cliente-java 0.3.23
+         (standalone, sem BOM) traz jackson-core/databind 3.1.5 [SECURITY]
+         como transitivas, e o RequireUpperBoundDeps do hubsaude-parent
+         exige a versão resolvida >= maior transitiva. Remover quando o
+         BOM alcançar 3.1.5 (mesmo padrão do override do BouncyCastle,
+         removido na adoção do parent 0.4.62). -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>3.1.5</version>
+            </dependency>
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>3.1.5</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <!--
             JSpecify (REC-09/ADR-67): anotações de nulidade
@@ -71,7 +93,7 @@
         <dependency>
             <groupId>br.gov.go.saude.hubsaude</groupId>
             <artifactId>hubsaude-cliente-java</artifactId>
-            <version>0.3.22</version>
+            <version>0.3.23</version>
         </dependency>
 
         <!-- SLF4J Simple: implementação minimalista para CLI -->

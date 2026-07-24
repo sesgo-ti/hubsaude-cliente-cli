@@ -8,6 +8,7 @@ package br.gov.go.saude.hubsaude.client.cli;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Objects;
 
 import br.gov.go.saude.hubsaude.client.SmartTokenClient;
 import br.gov.go.saude.hubsaude.client.SmartTokenClientBuilder;
@@ -53,12 +54,17 @@ final class ClienteToken {
      */
     static ClienteToken conectar(final AnalisadorArgumentos.Config config) throws IOException {
         final SmartTokenClientBuilder builder = SmartTokenClient.builder()
-                .clientId(config.clientId)
+                .clientId(Objects.requireNonNull(
+                        config.clientId, "clientId obrigatório — garantido por AnalisadorArgumentos.validar()"))
                 .privateKeyPem(Path.of(config.keyPath))
                 .certificatePem(Path.of(config.certPath))
                 .tlsProtocol(config.tlsProtocol)
                 .jwtAlgorithm(config.jwtAlgorithm)
-                .hubContext(config.ig, config.igVersao)
+                .hubContext(
+                        Objects.requireNonNull(
+                                config.ig, "ig obrigatório — garantido por AnalisadorArgumentos.validar()"),
+                        Objects.requireNonNull(
+                                config.igVersao, "igVersao obrigatório — garantido por AnalisadorArgumentos.validar()"))
                 .connectTimeout(Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS))
                 .requestTimeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS));
 

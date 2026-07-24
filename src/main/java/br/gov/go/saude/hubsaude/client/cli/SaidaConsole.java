@@ -9,6 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
 
+import org.jspecify.annotations.Nullable;
+
 import br.gov.go.saude.hubsaude.client.SmartTokenClient;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -190,7 +192,7 @@ final class SaidaConsole {
      * @param rawJson corpo JSON cru da resposta; pode ser {@code null} quando
      *                o token foi servido a partir do cache
      */
-    static void printKeycloakResponse(final String rawJson) {
+    static void printKeycloakResponse(final @Nullable String rawJson) {
         if (rawJson == null || rawJson.isBlank()) {
             return;
         }
