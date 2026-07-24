@@ -56,6 +56,9 @@ final class SaidaConsole {
     /**
      * Imprime as instruções de uso (parâmetros, exemplos e códigos de saída).
      */
+    @SuppressWarnings("checkstyle:MethodLength")
+    // Texto de ajuda da CLI impresso linha a linha: conteúdo declarativo,
+    // sem lógica — dividir só fragmentaria a mensagem.
     static void printUsage() {
         System.out.println("Verifica se o credenciamento foi aprovado obtendo um token de acesso.");
         System.out.println();
