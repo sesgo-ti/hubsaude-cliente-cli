@@ -228,7 +228,7 @@ final class SaidaConsole {
         printInfo("Detalhes do token JWT:");
 
         try {
-            final String[] parts = token.split("\\.");
+            final String[] parts = token.split("\\.", -1);
             if (parts.length >= 2) {
                 final String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
                 final String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);

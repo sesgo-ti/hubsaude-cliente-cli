@@ -7,7 +7,7 @@
     <parent>
         <groupId>br.gov.go.saude.hubsaude</groupId>
         <artifactId>hubsaude-parent</artifactId>
-        <version>0.4.61</version>
+        <version>0.4.63</version>
         <relativePath />
     </parent>
 
@@ -52,33 +52,6 @@
             <url>https://github.com/kyriosdata</url>
         </developer>
     </developers>
-
-    <dependencyManagement>
-        <dependencies>
-            <!--
-                Override temporário do triplete BouncyCastle: o
-                hubsaude-cliente-java 0.3.22 usa 1.85, enquanto o BOM
-                hubsaude-dependencies 0.4.27 (via parent) ainda gerencia
-                1.84 — o RequireUpperBoundDeps rejeita o downgrade.
-                Remover quando o BOM alinhar em >= 1.85.
-            -->
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk18on</artifactId>
-                <version>1.85</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk18on</artifactId>
-                <version>1.85</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcutil-jdk18on</artifactId>
-                <version>1.85</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <!--
