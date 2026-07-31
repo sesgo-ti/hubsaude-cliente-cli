@@ -58,8 +58,23 @@ class VerificarAcessoTest {
                 .contains("Token obtido com sucesso!")
                 .contains("<REDACTED>")
                 .contains("Detalhes do token JWT:")
+                .contains("Token (primeiros 50 chars): " + TOKEN_FAKE.substring(0, 50) + "...")
                 .contains("Credenciamento verificado. Acesso ao HubSaúde está funcionando.")
-                .doesNotContain(TOKEN_FAKE + "\"");
+                .doesNotContain("Token completo:")
+                .doesNotContain(TOKEN_FAKE);
+    }
+
+    @Test
+    void deveExibirTokenCompletoComShowToken(@TempDir final Path tempDir) throws Exception {
+        final AnalisadorArgumentos.Config config = configComArquivos(tempDir, "--show-token");
+        final ClienteToken cliente = new ClienteToken(
+                "RS384",
+                "https://auth.exemplo.gov.br/token",
+                scope -> new SmartTokenClient.TokenResponse(TOKEN_FAKE, 300, "{}"));
+
+        final String saida = capturarStdout(() -> VerificarAcesso.verificarAcesso(config, cfg -> cliente));
+
+        assertThat(saida).contains("Token completo:").contains(TOKEN_FAKE);
     }
 
     @Test

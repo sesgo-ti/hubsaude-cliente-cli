@@ -89,6 +89,7 @@ final class SaidaConsole {
         System.out.println(
                 "  --trust=<PATH>        Certificado PEM do servidor " + "(trust anchor, para simulador/homologação)");
         System.out.println("  --quiet, -q           Oculta os detalhes do token (exibidos por padrão)");
+        System.out.println("  --show-token          Exibe o access token completo (sensível; oculto por padrão)");
         System.out.println("  --debug               Exibe detalhes técnicos (stack trace) em caso de erro");
         System.out.println("  --help, -h            Exibe esta mensagem");
         System.out.println();
@@ -154,14 +155,20 @@ final class SaidaConsole {
     /**
      * Exibe o resultado da verificação bem-sucedida: resposta do servidor de
      * autorização (redigida), tempo de resposta e detalhes (ou prévia, em
-     * modo {@code --quiet}) do token.
+     * modo {@code --quiet}) do token. O conteúdo integral do token só é
+     * exibido quando {@code showToken} é verdadeiro ({@code --show-token}),
+     * para a credencial não vazar em terminal/logs de CI (issue #813).
      *
      * @param resposta resposta de token do servidor de autorização
      * @param elapsed duração da obtenção do token
      * @param quiet se {@code true}, oculta os detalhes do token
+     * @param showToken se {@code true}, exibe o token completo
      */
     static void printResultado(
-            final SmartTokenClient.TokenResponse resposta, final Duration elapsed, final boolean quiet) {
+            final SmartTokenClient.TokenResponse resposta,
+            final Duration elapsed,
+            final boolean quiet,
+            final boolean showToken) {
         final String token = resposta.accessToken();
 
         printSuccess("Token obtido com sucesso!");
@@ -174,16 +181,27 @@ final class SaidaConsole {
         System.out.println("  Tempo de resposta: " + elapsed.toMillis() + "ms");
 
         if (quiet) {
-            final String preview = token.substring(0, Math.min(TOKEN_PREVIEW_CHARS, token.length()));
-            System.out.println("  Token (primeiros " + TOKEN_PREVIEW_CHARS + " chars): " + preview + "...");
+            printTokenPreview(token);
             System.out.println();
             printInfo("Omita --quiet para ver detalhes do token.");
         } else {
-            printTokenDetails(token);
+            printTokenDetails(token, showToken);
         }
 
         System.out.println();
         printSuccess("Credenciamento verificado. Acesso ao HubSaúde está funcionando.");
+    }
+
+    /**
+     * Exibe a prévia truncada do token ({@value #TOKEN_PREVIEW_CHARS}
+     * primeiros caracteres), sem a assinatura — suficiente para conferência
+     * visual sem expor a credencial inteira.
+     *
+     * @param token JWT compacto
+     */
+    private static void printTokenPreview(final String token) {
+        final String preview = token.substring(0, Math.min(TOKEN_PREVIEW_CHARS, token.length()));
+        System.out.println("  Token (primeiros " + TOKEN_PREVIEW_CHARS + " chars): " + preview + "...");
     }
 
     /**
@@ -220,15 +238,21 @@ final class SaidaConsole {
     }
 
     /**
-     * Exibe header, payload e conteúdo integral do token JWT.
+     * Exibe header e payload decodificados do token JWT. Por padrão a
+     * exibição termina com a prévia truncada do token
+     * ({@value #TOKEN_PREVIEW_CHARS} caracteres); o conteúdo integral —
+     * incluindo a assinatura — só é impresso quando {@code showToken} é
+     * verdadeiro ({@code --show-token}), alinhado à US-14 do
+     * {@code hubsaude-cli} (issue #813).
      *
      * @param token JWT compacto ({@code header.payload.assinatura})
+     * @param showToken se {@code true}, imprime o token completo
      */
     @SuppressFBWarnings(
             value = "REC_CATCH_EXCEPTION",
             justification = "Decodificação do JWT é best-effort para exibição; "
                     + "qualquer falha cai no fallback amigável sem abortar.")
-    static void printTokenDetails(final String token) {
+    static void printTokenDetails(final String token, final boolean showToken) {
         System.out.println();
         printInfo("Detalhes do token JWT:");
 
@@ -251,9 +275,14 @@ final class SaidaConsole {
         }
 
         System.out.println();
-        System.out.println("  Token completo:");
-        for (int i = 0; i < token.length(); i += TOKEN_LINE_WIDTH) {
-            System.out.println("    " + token.substring(i, Math.min(i + TOKEN_LINE_WIDTH, token.length())));
+        if (showToken) {
+            System.out.println("  Token completo:");
+            for (int i = 0; i < token.length(); i += TOKEN_LINE_WIDTH) {
+                System.out.println("    " + token.substring(i, Math.min(i + TOKEN_LINE_WIDTH, token.length())));
+            }
+        } else {
+            printTokenPreview(token);
+            printInfo("Use --show-token para exibir o token completo.");
         }
     }
 

@@ -26,6 +26,12 @@ import br.gov.go.saude.hubsaude.client.SmartTokenClient;
  */
 class SaidaConsoleTest {
 
+    /**
+     * Assinatura (3ª parte) do JWT sintético: jamais pode aparecer no
+     * stdout sem {@code --show-token} (issue #813).
+     */
+    private static final String ASSINATURA_FAKE = "assinatura-fake";
+
     // ------------------------------------------------------------------
     // redactSecrets: o segredo NÃO pode aparecer na saída
     // ------------------------------------------------------------------
@@ -111,6 +117,7 @@ class SaidaConsoleTest {
                 .contains("--kid=<KID>")
                 .contains("--trust=<PATH>")
                 .contains("--quiet, -q")
+                .contains("--show-token")
                 .contains("--help, -h")
                 .contains("EXEMPLOS:")
                 .contains("CÓDIGOS DE SAÍDA:")
@@ -128,12 +135,10 @@ class SaidaConsoleTest {
     }
 
     @Test
-    void deveExibirHeaderPayloadETokenCompletoParaJwtValido() {
-        final String header = base64Url("{\"alg\":\"RS256\",\"typ\":\"JWT\"}");
-        final String payload = base64Url("{\"iss\":\"https://auth.exemplo.gov.br\",\"exp\":1735689600}");
-        final String token = header + "." + payload + ".assinatura-fake";
+    void deveExibirHeaderPayloadEPreviaSemVazarAssinaturaPorPadrao() {
+        final String token = jwtValido();
 
-        final String saida = capturarStdout(() -> SaidaConsole.printTokenDetails(token));
+        final String saida = capturarStdout(() -> SaidaConsole.printTokenDetails(token, false));
 
         assertThat(saida)
                 .contains("Header:")
@@ -141,14 +146,31 @@ class SaidaConsoleTest {
                 .contains("RS256")
                 .contains("Payload:")
                 .contains("https://auth.exemplo.gov.br")
-                .contains("Token completo:");
+                .contains("Token (primeiros 50 chars): " + token.substring(0, 50) + "...")
+                .contains("Use --show-token para exibir o token completo.")
+                .doesNotContain("Token completo:")
+                .doesNotContain(ASSINATURA_FAKE);
+    }
+
+    @Test
+    void deveExibirTokenCompletoApenasComShowToken() {
+        final String token = jwtValido();
+
+        final String saida = capturarStdout(() -> SaidaConsole.printTokenDetails(token, true));
+
+        assertThat(saida)
+                .contains("Header:")
+                .contains("Payload:")
+                .contains("Token completo:")
+                .contains(ASSINATURA_FAKE)
+                .doesNotContain("Use --show-token para exibir o token completo.");
     }
 
     @Test
     void deveQuebrarTokenLongoEmLinhasDeLarguraFixa() {
         final String token = "x".repeat(200);
 
-        final String saida = capturarStdout(() -> SaidaConsole.printTokenDetails(token));
+        final String saida = capturarStdout(() -> SaidaConsole.printTokenDetails(token, true));
 
         assertThat(saida).contains("    " + "x".repeat(80)).contains("    " + "x".repeat(40));
     }
@@ -156,7 +178,7 @@ class SaidaConsoleTest {
     @Test
     void deveExibirFallbackQuandoTokenNaoDecodificavel() {
         // Duas partes separadas por ponto, mas com Base64URL inválido
-        final String saida = capturarStdout(() -> SaidaConsole.printTokenDetails("!!!.###"));
+        final String saida = capturarStdout(() -> SaidaConsole.printTokenDetails("!!!.###", true));
 
         assertThat(saida).contains("(Não foi possível decodificar o token)").contains("Token completo:");
     }
@@ -228,12 +250,13 @@ class SaidaConsoleTest {
     }
 
     @Test
-    void deveExibirResultadoDetalhadoPorPadrao() {
-        final String token = base64Url("{\"alg\":\"RS384\"}") + "." + base64Url("{\"iss\":\"hub\"}") + ".sig";
+    void deveExibirResultadoDetalhadoPorPadraoSemVazarAssinatura() {
+        final String token = jwtValido();
         final SmartTokenClient.TokenResponse resposta = new SmartTokenClient.TokenResponse(
                 token, 300, "{\"access_token\":\"" + token + "\",\"expires_in\":300}");
 
-        final String saida = capturarStdout(() -> SaidaConsole.printResultado(resposta, Duration.ofMillis(42), false));
+        final String saida =
+                capturarStdout(() -> SaidaConsole.printResultado(resposta, Duration.ofMillis(42), false, false));
 
         assertThat(saida)
                 .contains("Token obtido com sucesso!")
@@ -241,7 +264,22 @@ class SaidaConsoleTest {
                 .contains("<REDACTED>")
                 .contains("Tempo de resposta: 42ms")
                 .contains("Detalhes do token JWT:")
-                .contains("Credenciamento verificado. Acesso ao HubSaúde está funcionando.");
+                .contains("Token (primeiros 50 chars): " + token.substring(0, 50) + "...")
+                .contains("Credenciamento verificado. Acesso ao HubSaúde está funcionando.")
+                .doesNotContain("Token completo:")
+                .doesNotContain(ASSINATURA_FAKE);
+    }
+
+    @Test
+    void deveExibirTokenCompletoNoResultadoComShowToken() {
+        final String token = jwtValido();
+        final SmartTokenClient.TokenResponse resposta = new SmartTokenClient.TokenResponse(
+                token, 300, "{\"access_token\":\"" + token + "\",\"expires_in\":300}");
+
+        final String saida =
+                capturarStdout(() -> SaidaConsole.printResultado(resposta, Duration.ofMillis(42), false, true));
+
+        assertThat(saida).contains("Token completo:").contains(ASSINATURA_FAKE);
     }
 
     @Test
@@ -249,7 +287,8 @@ class SaidaConsoleTest {
         final String token = "a".repeat(120);
         final SmartTokenClient.TokenResponse resposta = new SmartTokenClient.TokenResponse(token, 300, "{}");
 
-        final String saida = capturarStdout(() -> SaidaConsole.printResultado(resposta, Duration.ofMillis(7), true));
+        final String saida =
+                capturarStdout(() -> SaidaConsole.printResultado(resposta, Duration.ofMillis(7), true, false));
 
         assertThat(saida)
                 .contains("Token obtido com sucesso!")
@@ -258,6 +297,19 @@ class SaidaConsoleTest {
                 .contains("Omita --quiet para ver detalhes do token.")
                 .doesNotContain("Detalhes do token JWT:")
                 .doesNotContain("Resposta do servidor de autorização");
+    }
+
+    @Test
+    void quietPrevaleceSobreShowToken() {
+        final String token = "a".repeat(120);
+        final SmartTokenClient.TokenResponse resposta = new SmartTokenClient.TokenResponse(token, 300, "{}");
+
+        final String saida =
+                capturarStdout(() -> SaidaConsole.printResultado(resposta, Duration.ofMillis(7), true, true));
+
+        assertThat(saida)
+                .contains("Token (primeiros 50 chars): " + "a".repeat(50) + "...")
+                .doesNotContain("Token completo:");
     }
 
     // ------------------------------------------------------------------
@@ -333,6 +385,18 @@ class SaidaConsoleTest {
 
     private static String base64Url(final String texto) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(texto.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Monta um JWT compacto sintético com header e payload decodificáveis e
+     * a assinatura identificável {@link #ASSINATURA_FAKE}; o trecho
+     * header+payload excede os 50 caracteres da prévia, garantindo que a
+     * assinatura jamais entre na prévia truncada.
+     */
+    private static String jwtValido() {
+        final String header = base64Url("{\"alg\":\"RS256\",\"typ\":\"JWT\"}");
+        final String payload = base64Url("{\"iss\":\"https://auth.exemplo.gov.br\",\"exp\":1735689600}");
+        return header + "." + payload + "." + ASSINATURA_FAKE;
     }
 
     private static String capturarStdout(final Runnable acao) {

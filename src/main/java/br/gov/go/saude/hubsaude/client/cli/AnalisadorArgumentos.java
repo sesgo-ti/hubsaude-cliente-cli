@@ -142,6 +142,8 @@ final class AnalisadorArgumentos {
         }
         if ("--quiet".equals(arg) || "-q".equals(arg)) {
             config.quiet = true;
+        } else if ("--show-token".equals(arg)) {
+            config.showToken = true;
         } else if (!"--help".equals(arg) && !"-h".equals(arg) && !"--debug".equals(arg)) {
             throw new IllegalArgumentException("Argumento desconhecido: " + arg);
         }
@@ -291,5 +293,7 @@ final class AnalisadorArgumentos {
         String trustAnchorPath;
 
         boolean quiet;
+
+        boolean showToken;
     }
 }

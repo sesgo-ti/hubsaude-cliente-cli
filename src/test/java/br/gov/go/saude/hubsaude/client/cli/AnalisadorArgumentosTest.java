@@ -126,6 +126,7 @@ class AnalisadorArgumentosTest {
         assertThat(config.trustAnchorPath).isNull();
         assertThat(config.keyPassword).isNull();
         assertThat(config.quiet).isFalse();
+        assertThat(config.showToken).isFalse();
     }
 
     @Test
@@ -144,6 +145,7 @@ class AnalisadorArgumentosTest {
                 "--alg=es384",
                 "--kid=chave-2026",
                 "--trust=anchor.pem",
+                "--show-token",
                 "--quiet");
 
         assertThat(config.tokenEndpoint).isEqualTo("https://auth.exemplo.gov.br/token");
@@ -157,6 +159,7 @@ class AnalisadorArgumentosTest {
         assertThat(config.igVersao).isEqualTo("1.2.3");
         assertThat(config.trustAnchorPath).isEqualTo("anchor.pem");
         assertThat(config.quiet).isTrue();
+        assertThat(config.showToken).isTrue();
     }
 
     @Test

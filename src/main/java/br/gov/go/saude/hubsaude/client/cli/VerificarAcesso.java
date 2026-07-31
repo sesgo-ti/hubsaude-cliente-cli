@@ -42,6 +42,7 @@ import br.gov.go.saude.hubsaude.client.SmartTokenClient;
  *   <li>{@code --kid} — Identificador da chave registrada no SA (header {@code kid}, opcional)</li>
  *   <li>{@code --trust} — Caminho para certificado PEM do servidor (trust anchor), para simulador/homologação</li>
  *   <li>{@code --quiet} — Oculta os detalhes do token (por padrão são exibidos)</li>
+ *   <li>{@code --show-token} — Exibe o access token completo (sensível; oculto por padrão)</li>
  *   <li>{@code --debug} — Exibe detalhes técnicos (stack trace) em caso de erro</li>
  * </ul>
  *
@@ -160,6 +161,6 @@ public final class VerificarAcesso {
         final Duration elapsed = Duration.between(start, Instant.now());
 
         // Sucesso!
-        SaidaConsole.printResultado(resposta, elapsed, config.quiet);
+        SaidaConsole.printResultado(resposta, elapsed, config.quiet, config.showToken);
     }
 }

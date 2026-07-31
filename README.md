@@ -67,7 +67,9 @@ java -jar hubsaude-cliente-cli-<versão>.jar \
     --ig-versao=0.0.1
 ```
 
-Por padrão a saída inclui os detalhes do token. Use `--quiet` para ocultá-los:
+Por padrão a saída inclui os detalhes do token (header/payload decodificados
+e prévia truncada de 50 caracteres — o token completo exige `--show-token`).
+Use `--quiet` para ocultá-los:
 
 ```bash
 java -jar hubsaude-cliente-cli-<versão>.jar \
@@ -165,8 +167,11 @@ mvn exec:java \
 [OK] Credenciamento verificado. Acesso ao HubSaúde está funcionando.
 ```
 
-Sem `--quiet` (padrão), no lugar do *preview* de 50 caracteres são exibidos a
-resposta do servidor de autorização e as tabelas do *header*/*payload* do JWT.
+Sem `--quiet` (padrão), além do *preview* de 50 caracteres são exibidos a
+resposta do servidor de autorização (com os segredos redigidos) e as tabelas
+do *header*/*payload* do JWT. O access token **completo** só é exibido com a
+flag explícita `--show-token` (issue #813) — evite-a em CI/CD, pois o token
+ficaria retido nos logs do pipeline.
 
 ---
 
@@ -248,6 +253,7 @@ rejeitada de falha de rede:
 | `--kid`        | Identificador da chave registrada no SA (header `kid`, rotação de chaves)  | Não         |
 | `--trust`      | Certificado PEM do servidor (trust anchor, para simulador/homologação)     | Não         |
 | `--quiet`      | Oculta os detalhes do token (exibidos por padrão)                          | Não         |
+| `--show-token` | Exibe o access token completo (sensível; oculto por padrão)                | Não         |
 | `--debug`      | Exibe detalhes técnicos (*stack trace*) em caso de erro                    | Não         |
 
 ---
