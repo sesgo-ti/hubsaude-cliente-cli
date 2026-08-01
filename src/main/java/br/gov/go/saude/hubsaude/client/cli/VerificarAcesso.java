@@ -7,7 +7,6 @@ package br.gov.go.saude.hubsaude.client.cli;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Objects;
 
 import br.gov.go.saude.hubsaude.client.SmartTokenClient;
@@ -154,11 +153,13 @@ public final class VerificarAcesso {
         SaidaConsole.printConfiguracao(config, cliente.jwtAlgorithm(), cliente.tokenEndpoint());
 
         SaidaConsole.printInfo("Obtendo token de acesso...");
-        final Instant start = Instant.now();
+        // Latência com fonte monotônica: Instant.now() sofre saltos de
+        // NTP/relógio de parede (#1817).
+        final long startNanos = System.nanoTime();
 
         final SmartTokenClient.TokenResponse resposta = cliente.obterToken(config.scope);
 
-        final Duration elapsed = Duration.between(start, Instant.now());
+        final Duration elapsed = Duration.ofNanos(System.nanoTime() - startNanos);
 
         // Sucesso!
         SaidaConsole.printResultado(resposta, elapsed, config.quiet, config.showToken);
