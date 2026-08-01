@@ -151,22 +151,35 @@ class JwtPayloadFormatterTest {
 
     @Test
     void deveInterpretarTodosOsEscapesSimples() {
-        // Escapes JSON: \\ \/ \r \b \f e um escape desconhecido (\z),
-        // que degrada para o próprio caractere (parser leniente).
-        final String json = "{\"txt\":\"p\\\\q \\/ r\\rs\\bt\\fu \\zv\"}";
+        // Escapes JSON válidos: \\ \/ \r \b \f
+        final String json = "{\"txt\":\"p\\\\q \\/ r\\rs\\bt\\fu\"}";
 
         final String saida = JwtPayloadFormatter.formatAsTable(json, INDENT);
 
-        assertThat(saida).contains("p\\q / r\rs\bt\fu zv");
+        assertThat(saida).contains("p\\q / r\rs\bt\fu");
     }
 
     @Test
-    void deveTolerarEspacosAntesDoFechamentoDoObjeto() {
+    void deveDevolverEscapeDesconhecidoComoFallback() {
+        // Regressão #1819: \z é inválido em JSON; o parser leniente
+        // anterior exibia a claim deturpada ("zv"). O parser estrito
+        // rejeita e degrada para a linha única (payload bruto).
+        final String json = "{\"txt\":\"a\\zv\"}";
+
+        final String saida = JwtPayloadFormatter.formatAsTable(json, INDENT);
+
+        assertThat(saida).isEqualTo(INDENT + json);
+    }
+
+    @Test
+    void deveDevolverObjetoComVirgulaPendenteComoFallback() {
+        // Vírgula pendente é JSON inválido (RFC 8259); o parser estrito
+        // rejeita e devolve o texto bruto em linha única (#1819).
         final String json = "{\"a\":1,   }";
 
         final String saida = JwtPayloadFormatter.formatAsTable(json, INDENT);
 
-        assertThat(saida).contains("a").contains("1");
+        assertThat(saida).isEqualTo(INDENT + json);
     }
 
     @Test
@@ -192,25 +205,27 @@ class JwtPayloadFormatterTest {
     }
 
     @Test
-    void deveDegradarEscapeUnicodeMalformadoParaTextoBruto() {
-        // Hex inválido degrada como escape desconhecido: preserva "uGGGG",
-        // consumindo apenas a barra, e as demais claims seguem formatadas
+    void deveDevolverEscapeUnicodeMalformadoComoFallback() {
+        // Regressão #1819: o parser leniente anterior exibia a claim
+        // deturpada ("auGGGGb"). O parser estrito rejeita o escape
+        // inválido e devolve o payload bruto em linha única, sem
+        // mascarar a corrupção.
         final String json = "{\"txt\":\"a\\uGGGGb\",\"sub\":\"hs-1\"}";
 
         final String saida = JwtPayloadFormatter.formatAsTable(json, INDENT);
 
-        assertThat(saida.lines()).containsExactly("    txt : auGGGGb", "    sub : hs-1");
+        assertThat(saida).isEqualTo(INDENT + json);
     }
 
     @Test
-    void deveDegradarEscapeUnicodeComHexParcialmenteValido() {
-        // Três dígitos válidos e um inválido ("00GA"): o bloco inteiro é
-        // tratado lenientemente, sem conversão parcial
+    void deveDevolverEscapeUnicodeComHexParcialmenteValidoComoFallback() {
+        // Três dígitos válidos e um inválido ("00GA"): sem conversão
+        // parcial — a entrada malformada cai no fallback bruto (#1819).
         final String json = "{\"txt\":\"x\\u00GAy\"}";
 
         final String saida = JwtPayloadFormatter.formatAsTable(json, INDENT);
 
-        assertThat(saida).contains("xu00GAy");
+        assertThat(saida).isEqualTo(INDENT + json);
     }
 
     @Test

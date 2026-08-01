@@ -96,6 +96,15 @@
             <version>0.3.23</version>
         </dependency>
 
+        <!-- Jackson databind (uso direto em JwtPayloadFormatter, #1819):
+             já presente no fat JAR como transitiva de hubsaude-cliente-java;
+             declarado explicitamente por ser consumido pelo código deste
+             módulo. Versão governada pelo dependencyManagement acima. -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
         <!-- SLF4J Simple: implementação minimalista para CLI -->
         <dependency>
             <groupId>org.slf4j</groupId>
