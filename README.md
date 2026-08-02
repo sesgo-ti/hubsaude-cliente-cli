@@ -1,6 +1,6 @@
 # hubsaude-cliente-cli
 
-[![Version](https://img.shields.io/badge/Version-0.3.27-yellow)](https://github.com/FabricaDeSoftwareINF/server-hubsaude)
+[![Version](https://img.shields.io/badge/Version-0.3.28-yellow)](https://github.com/FabricaDeSoftwareINF/server-hubsaude)
 [![Java 21+](https://img.shields.io/badge/Java-21%2B-blue)](https://openjdk.org/)
 [![Maven](https://img.shields.io/badge/Maven-3.9%2B-orange)](https://maven.apache.org/)
 [![License](https://img.shields.io/badge/License-SES--GO%2FUFG-green)](#licença)

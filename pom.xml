@@ -15,7 +15,7 @@
     <version>${revision}</version>
 
     <properties>
-        <revision>0.3.28-SNAPSHOT</revision>
+        <revision>0.3.29-SNAPSHOT</revision>
         <!-- Mutation testing não se aplica: wrapper picocli fino sobre a
              biblioteca hubsaude-cliente-java (onde vive a lógica mutável);
              aqui restam wiring de CLI e I/O de console (issue #331). -->
@@ -93,7 +93,7 @@
         <dependency>
             <groupId>br.gov.go.saude.hubsaude</groupId>
             <artifactId>hubsaude-cliente-java</artifactId>
-            <version>0.3.24</version>
+            <version>0.3.25</version>
         </dependency>
 
         <!-- Jackson databind (uso direto em JwtPayloadFormatter, #1819):
