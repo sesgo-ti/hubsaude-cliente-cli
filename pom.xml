@@ -15,7 +15,7 @@
     <version>${revision}</version>
 
     <properties>
-        <revision>0.3.30-SNAPSHOT</revision>
+        <revision>0.3.31-SNAPSHOT</revision>
         <!-- Mutation testing não se aplica: wrapper picocli fino sobre a
              biblioteca hubsaude-cliente-java (onde vive a lógica mutável);
              aqui restam wiring de CLI e I/O de console (issue #331). -->
@@ -54,7 +54,7 @@
     </developers>
 
     <!-- Override pontual do BOM (hubsaude-dependencies gerencia Jackson
-         3.1.4, alinhado ao Spring Boot): o hubsaude-cliente-java 0.3.23
+         3.1.4, alinhado ao Spring Boot): o hubsaude-cliente-java 0.3.27
          (standalone, sem BOM) traz jackson-core/databind 3.1.5 [SECURITY]
          como transitivas, e o RequireUpperBoundDeps do hubsaude-parent
          exige a versão resolvida >= maior transitiva. Remover quando o
@@ -93,7 +93,7 @@
         <dependency>
             <groupId>br.gov.go.saude.hubsaude</groupId>
             <artifactId>hubsaude-cliente-java</artifactId>
-            <version>0.3.26</version>
+            <version>0.3.27</version>
         </dependency>
 
         <!-- Jackson databind (uso direto em JwtPayloadFormatter, #1819):
