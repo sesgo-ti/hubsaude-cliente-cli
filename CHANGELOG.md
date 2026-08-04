@@ -8,6 +8,9 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Unreleased]
 
 ### Alterado
+- Dependência `hubsaude-cliente-java` atualizada de `0.3.29` para `0.4.0`.
+  O CLI já utilizava exclusivamente `SmartTokenClient.builder()` e permanece
+  compatível com a consolidação da API da biblioteca (#1962).
 - **Higiene de credenciais no stdout (#813):** o modo detalhado (sem
   `--quiet`) deixa de imprimir o access token completo por padrão —
   passa a exibir header/payload decodificados e a prévia truncada de
