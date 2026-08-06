@@ -174,7 +174,7 @@ class JwtPayloadFormatterTest {
     @Test
     void deveDevolverObjetoComVirgulaPendenteComoFallback() {
         // Vírgula pendente é JSON inválido (RFC 8259); o parser estrito
-        // rejeita e devolve o texto bruto em linha única (#1819).
+        // rejeita e devolve o texto bruto em linha única.
         final String json = "{\"a\":1,   }";
 
         final String saida = JwtPayloadFormatter.formatAsTable(json, INDENT);
@@ -220,7 +220,7 @@ class JwtPayloadFormatterTest {
     @Test
     void deveDevolverEscapeUnicodeComHexParcialmenteValidoComoFallback() {
         // Três dígitos válidos e um inválido ("00GA"): sem conversão
-        // parcial — a entrada malformada cai no fallback bruto (#1819).
+        // parcial — a entrada malformada cai no fallback bruto.
         final String json = "{\"txt\":\"x\\u00GAy\"}";
 
         final String saida = JwtPayloadFormatter.formatAsTable(json, INDENT);

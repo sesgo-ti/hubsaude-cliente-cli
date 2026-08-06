@@ -28,7 +28,7 @@ class SaidaConsoleTest {
 
     /**
      * Assinatura (3ª parte) do JWT sintético: jamais pode aparecer no
-     * stdout sem {@code --show-token} (issue #813).
+     * stdout sem {@code --show-token}.
      */
     private static final String ASSINATURA_FAKE = "assinatura-fake";
 
@@ -349,7 +349,7 @@ class SaidaConsoleTest {
     }
 
     // ------------------------------------------------------------------
-    // printVeredito: veredito da classificação por código de saída (#817)
+    // printVeredito: veredito da classificação por código de saída.
     // ------------------------------------------------------------------
 
     @Test

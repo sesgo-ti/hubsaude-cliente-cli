@@ -17,7 +17,7 @@
  * automação), {@code JwtPayloadFormatter} e {@code SaidaConsole}
  * (apresentação legível do resultado ao operador do estabelecimento).</p>
  *
- * <h2>Null-safety (REC-09/ADR-67)</h2>
+ * <h2>Null-safety</h2>
  *
  * <p>Pacote anotado com {@link org.jspecify.annotations.NullMarked}:
  * todo tipo é <strong>não-nulo por padrão</strong>; exceções são

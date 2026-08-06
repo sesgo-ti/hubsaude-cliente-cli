@@ -15,7 +15,7 @@ import br.gov.go.saude.hubsaude.client.SmartTokenClientBuilder;
 
 /**
  * Costura testável sobre a chamada ao {@link SmartTokenClient}
- * (issue #1034): expõe ao fluxo do {@link VerificarAcesso} apenas o que a
+ * expõe ao fluxo do {@link VerificarAcesso} apenas o que a
  * CLI consome — algoritmo JWT efetivo, token endpoint efetivo e a obtenção
  * da resposta de token — permitindo substituir a implementação real por um
  * dublê em testes unitários (o {@code SmartTokenClient} é {@code final} e

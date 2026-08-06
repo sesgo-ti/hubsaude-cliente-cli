@@ -26,7 +26,7 @@ import br.gov.go.saude.hubsaude.client.SmartTokenException;
  * Testes unitários do fluxo de orquestração de {@link VerificarAcesso}:
  * validação dos arquivos configurados, criação do cliente pela
  * {@link ClienteToken.Fabrica}, exibição do resultado e o contrato de
- * códigos de saída 0/3/4/6 da issue #817 — usando uma fábrica fake no
+ * códigos de saída 0/3/4/6 — usando uma fábrica fake no
  * lugar do {@code SmartTokenClient} real (sem rede).
  */
 class VerificarAcessoTest {
@@ -142,7 +142,7 @@ class VerificarAcessoTest {
     }
 
     // ------------------------------------------------------------------
-    // executar: contrato de códigos de saída 0/3/4/6 (issue #817)
+    // executar: contrato de códigos de saída 0/3/4/6.
     // ------------------------------------------------------------------
 
     @Test

@@ -33,9 +33,7 @@
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
         <dependencyCheckSkip>false</dependencyCheckSkip>
-        <!-- Mutation testing não se aplica: wrapper picocli fino sobre a
-             biblioteca hubsaude-cliente-java (onde vive a lógica mutável);
-             aqui restam wiring de CLI e I/O de console (issue #331). -->
+        <!-- Mutation testing não integra o gate padrão deste wrapper CLI. -->
         <pitest.skip>true</pitest.skip>
     </properties>
 
@@ -43,7 +41,7 @@
     <description>Ferramenta de linha de comando para verificação de acesso ao 
         HubSaúde (pós-credenciamento), 
         utilizando a biblioteca hubsaude-cliente-java.</description>
-    <url>https://github.com/FabricaDeSoftwareINF/server-hubsaude</url>
+    <url>https://github.com/sesgo-ti/hubsaude-cliente-cli</url>
 
     <organization>
         <name>SES-GO e UFG/INF</name>
@@ -69,6 +67,24 @@
         </developer>
     </developers>
 
+    <scm>
+        <connection>scm:git:https://github.com/sesgo-ti/hubsaude-cliente-cli.git</connection>
+        <developerConnection>scm:git:git@github.com:sesgo-ti/hubsaude-cliente-cli.git</developerConnection>
+        <url>https://github.com/sesgo-ti/hubsaude-cliente-cli</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/sesgo-ti/hubsaude-cliente-cli/issues</url>
+    </issueManagement>
+
+    <ciManagement>
+        <system>GitHub Actions</system>
+        <url>https://github.com/sesgo-ti/hubsaude-cliente-cli/actions</url>
+    </ciManagement>
+
+    <!-- Registry legado usado temporariamente apenas para ler o SDK 0.4.0. -->
     <repositories>
         <repository>
             <id>github-hubsaude</id>
@@ -105,15 +121,14 @@
             <version>${jspecify.version}</version>
         </dependency>
 
-        <!-- Biblioteca cliente: contém SmartTokenClient e demais classes
-             (hubContext()/RS384, issue #361), resolvida do GitHub Packages. -->
+        <!-- SDK usado pela ferramenta, lido temporariamente do registry legado. -->
         <dependency>
             <groupId>br.gov.go.saude.hubsaude</groupId>
             <artifactId>hubsaude-cliente-java</artifactId>
             <version>0.4.0</version>
         </dependency>
 
-        <!-- Jackson databind (uso direto em JwtPayloadFormatter, #1819):
+        <!-- Jackson databind usado diretamente em JwtPayloadFormatter:
              já presente no fat JAR como transitiva de hubsaude-cliente-java;
              declarado explicitamente por ser consumido pelo código deste
              módulo. Versão governada pelo dependencyManagement acima. -->
@@ -199,7 +214,7 @@
             </plugin>
 
             <!--
-                JaCoCo (issue #986): verificação de cobertura reativada.
+                Verificação de cobertura do código próprio do CLI.
                 As lógicas puras do CLI (parsing de argumentos, redação de
                 segredos, validação de arquivos, formatação de payload JWT
                 e rotinas de exibição no terminal) são cobertas por testes

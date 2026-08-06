@@ -14,10 +14,8 @@ import br.gov.go.saude.hubsaude.client.SigningException;
 import br.gov.go.saude.hubsaude.client.SmartTokenException;
 
 /**
- * Classifica as falhas do {@link VerificarAcesso} nos códigos de saída da
- * taxonomia do {@code hubsaude-cli} (issue #817), espelhando a semântica de
- * {@code hubsaude-cli/internal/exit/exit.go} (spec §12.1) para o caso de uso
- * {@code auth verify}:
+ * Classifica as falhas do {@link VerificarAcesso} nos códigos de saída do
+ * contrato público da ferramenta:
  *
  * <ul>
  *   <li>{@link #SUCESSO} (0) — credencial apta: token obtido;</li>
@@ -32,7 +30,7 @@ import br.gov.go.saude.hubsaude.client.SmartTokenException;
  * </ul>
  *
  * <p><strong>Fail-safe:</strong> enquanto o {@code hubsaude-cliente-java}
- * não expõe exceções tipadas por causa (evolução prevista na issue #1032),
+ * não expõe exceções tipadas por causa,
  * a distinção do código 6 apoia-se nos formatos de mensagem estáveis
  * produzidos pela biblioteca ({@code buildHttpErrorMessage} e o diagnóstico
  * de rejeição do certificado de cliente no mTLS). Toda falha que não puder

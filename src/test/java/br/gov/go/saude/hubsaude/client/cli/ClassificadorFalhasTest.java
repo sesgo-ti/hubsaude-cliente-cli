@@ -21,13 +21,13 @@ import br.gov.go.saude.hubsaude.client.SmartTokenException;
 /**
  * Testes unitários de {@link ClassificadorFalhas}: mapeamento das exceções
  * do fluxo da CLI para a taxonomia de códigos de saída 0/3/4/6 do
- * {@code hubsaude-cli} (issue #817), incluindo o comportamento fail-safe —
+ * contrato público, incluindo o comportamento fail-safe —
  * falha ambígua jamais classifica como credencial não apta.
  */
 class ClassificadorFalhasTest {
 
     // ------------------------------------------------------------------
-    // Constantes espelham a taxonomia de hubsaude-cli/internal/exit/exit.go
+    // Constantes espelham a taxonomia pública do CLI.
     // ------------------------------------------------------------------
 
     @Test
@@ -164,7 +164,7 @@ class ClassificadorFalhasTest {
     }
 
     // ------------------------------------------------------------------
-    // Status HTTP malformado na mensagem (entrada externa) — issue #1407
+    // Status HTTP malformado na mensagem recebida externamente.
     // ------------------------------------------------------------------
 
     @ParameterizedTest
