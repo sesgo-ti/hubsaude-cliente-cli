@@ -52,10 +52,9 @@
 
     <licenses>
         <license>
-            <name>Licença Proprietária SES-GO / UFG</name>
-            <url>https://github.com/FabricaDeSoftwareINF/server-hubsaude/blob/main/LICENSE</url>
-            <distribution>manual</distribution>
-            <comments>Consulte o arquivo LICENSE na raiz do repositório.</comments>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
         </license>
     </licenses>
 

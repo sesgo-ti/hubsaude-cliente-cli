@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2026 SES-GO / UFG
- * Todos os direitos reservados.
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025-2026 Estado de Goiás (SES-GO) e Universidade Federal de Goiás (UFG).
  */
 
 /**

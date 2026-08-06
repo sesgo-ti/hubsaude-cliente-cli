@@ -313,4 +313,6 @@ git tag -d v0.3.1               # remove a tag local
 
 ## Licença
 
-Copyright (c) 2026 SES-GO / UFG. Todos os direitos reservados.
+Apache License 2.0 — consulte [`LICENSE`](LICENSE) e [`NOTICE`](NOTICE).
+
+Copyright 2025-2026 Estado de Goiás (SES-GO) e Universidade Federal de Goiás (UFG).
