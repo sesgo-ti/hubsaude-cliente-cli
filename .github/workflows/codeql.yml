@@ -1,0 +1,36 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+  schedule:
+    - cron: '17 4 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+  packages: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: java-kotlin
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          server-id: github-hubsaude
+          server-username: GITHUB_ACTOR
+          server-password: HUBSAUDE_PACKAGES_TOKEN
+      - name: Compilar
+        run: mvn -B -ntp clean package -DskipTests
+        env:
+          HUBSAUDE_PACKAGES_TOKEN: ${{ secrets.HUBSAUDE_PACKAGES_TOKEN }}
+      - uses: github/codeql-action/analyze@v4

@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          server-id: github-hubsaude
+          server-username: GITHUB_ACTOR
+          server-password: HUBSAUDE_PACKAGES_TOKEN
+      - name: Validar tag e construir artefatos
+        env:
+          HUBSAUDE_PACKAGES_TOKEN: ${{ secrets.HUBSAUDE_PACKAGES_TOKEN }}
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          case "$VERSION" in
+            *-SNAPSHOT|*[!0-9.]*|.*|*.) exit 1 ;;
+          esac
+          mvn -B -ntp clean verify -Pquality,release -Drevision="$VERSION"
+      - name: Publicar GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            target/hubsaude-cliente-cli-*.jar \
+            target/hubsaude-cliente-cli-*-cyclonedx.json \
+            --generate-notes \
+            --verify-tag

@@ -22,9 +22,7 @@
  * <p>Pacote anotado com {@link org.jspecify.annotations.NullMarked}:
  * todo tipo é <strong>não-nulo por padrão</strong>; exceções são
  * marcadas explicitamente com
- * {@link org.jspecify.annotations.Nullable}. A conformidade é
- * verificada pelo NullAway no profile Maven {@code quality} do
- * hubsaude-parent (ADR-67/ADR-80).</p>
+ * {@link org.jspecify.annotations.Nullable}.</p>
  */
 @NullMarked
 package br.gov.go.saude.hubsaude.client.cli;
