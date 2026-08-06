@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2026 SES-GO / UFG
- * Todos os direitos reservados.
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025-2026 Estado de Goiás (SES-GO) e Universidade Federal de Goiás (UFG).
  */
 
 package br.gov.go.saude.hubsaude.client.cli;
@@ -20,7 +20,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * {@code [X]}), tabelas do token JWT e da resposta do servidor de
  * autorização, e o relatório de falha.
  *
- * <p>Colaborador extraído de {@code VerificarAcesso} (issue #1034). A
+ * <p>Colaborador extraído de {@code VerificarAcesso}. A
  * escrita direta em {@code System.out}/{@code System.err} é o mecanismo
  * legítimo de IO desta CLI (não há logger na saída para o operador); os
  * segredos são redigidos antes de qualquer impressão
@@ -157,7 +157,7 @@ final class SaidaConsole {
      * autorização (redigida), tempo de resposta e detalhes (ou prévia, em
      * modo {@code --quiet}) do token. O conteúdo integral do token só é
      * exibido quando {@code showToken} é verdadeiro ({@code --show-token}),
-     * para a credencial não vazar em terminal/logs de CI (issue #813).
+     * para a credencial não vazar em terminal/logs de CI.
      *
      * @param resposta resposta de token do servidor de autorização
      * @param elapsed duração da obtenção do token
@@ -228,7 +228,7 @@ final class SaidaConsole {
      * {@code refresh_token}, {@code id_token}) por um placeholder.
      *
      * <p>A redação de segredos é lógica pura e sensível à segurança
-     * (issue #986): o token jamais deve vazar no terminal.</p>
+     * o token jamais deve vazar no terminal.</p>
      *
      * @param json JSON original
      * @return JSON com os segredos redigidos
@@ -243,7 +243,7 @@ final class SaidaConsole {
      * ({@value #TOKEN_PREVIEW_CHARS} caracteres); o conteúdo integral —
      * incluindo a assinatura — só é impresso quando {@code showToken} é
      * verdadeiro ({@code --show-token}), alinhado à US-14 do
-     * {@code hubsaude-cli} (issue #813).
+     * contrato de segurança da ferramenta.
      *
      * @param token JWT compacto ({@code header.payload.assinatura})
      * @param showToken se {@code true}, imprime o token completo
@@ -289,7 +289,7 @@ final class SaidaConsole {
     /**
      * Reporta uma falha de obtenção de token no stderr com mensagem curta e
      * acionável, seguida do veredito da classificação (código de saída da
-     * taxonomia da issue #817); os detalhes técnicos (stack trace) são
+     * taxonomia pública); os detalhes técnicos (stack trace) são
      * emitidos apenas em modo diagnóstico.
      *
      * @param e falha ocorrida
@@ -309,7 +309,7 @@ final class SaidaConsole {
 
     /**
      * Imprime no stderr o veredito correspondente ao código de saída da
-     * taxonomia da issue #817, orientando a ação da automação (acionar o
+     * taxonomia pública, orientando a ação da automação (acionar o
      * credenciamento, reexecutar mais tarde ou corrigir a configuração).
      *
      * @param codigoSaida código de saída classificado

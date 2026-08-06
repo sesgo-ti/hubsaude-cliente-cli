@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2026 SES-GO / UFG
- * Todos os direitos reservados.
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025-2026 Estado de Goiás (SES-GO) e Universidade Federal de Goiás (UFG).
  */
 
 package br.gov.go.saude.hubsaude.client.cli;
@@ -15,7 +15,7 @@ import br.gov.go.saude.hubsaude.client.SmartTokenClientBuilder;
 
 /**
  * Costura testável sobre a chamada ao {@link SmartTokenClient}
- * (issue #1034): expõe ao fluxo do {@link VerificarAcesso} apenas o que a
+ * expõe ao fluxo do {@link VerificarAcesso} apenas o que a
  * CLI consome — algoritmo JWT efetivo, token endpoint efetivo e a obtenção
  * da resposta de token — permitindo substituir a implementação real por um
  * dublê em testes unitários (o {@code SmartTokenClient} é {@code final} e

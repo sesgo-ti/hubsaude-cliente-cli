@@ -1,9 +1,9 @@
 # hubsaude-cliente-cli
 
-[![Version](https://img.shields.io/badge/Version-0.3.32-yellow)](https://github.com/FabricaDeSoftwareINF/server-hubsaude)
+[![Version](https://img.shields.io/badge/Version-0.3.32-yellow)](https://github.com/sesgo-ti/hubsaude-cliente-cli/releases/tag/v0.3.32)
 [![Java 21+](https://img.shields.io/badge/Java-21%2B-blue)](https://openjdk.org/)
 [![Maven](https://img.shields.io/badge/Maven-3.9%2B-orange)](https://maven.apache.org/)
-[![License](https://img.shields.io/badge/License-SES--GO%2FUFG-green)](#licença)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 Ferramenta de conveniência para verificar que a obtenção de token 
 de acesso ao HubSaúde via SMART Backend Services pode ser realizada 
@@ -14,12 +14,8 @@ sucesso da verificação apenas evidencia que o credenciamento
 foi concluído corretamente para o certificado digital empregado
 na verificação. 
 
-> Usa [`hubsaude-cliente-java`](../hubsaude-cliente-java) para obtenção 
+> Usa [`hubsaude-cliente-java`](https://github.com/sesgo-ti/hubsaude-cliente-java) para obtenção
 > do token de acesso.
-
-> **Alternativa sem Java:** a mesma verificação pode ser feita com o 
-> `hubsaude auth verify` do [`hubsaude-cli`](../hubsaude-cli) — binário 
-> único (Go), **sem exigir Java instalado** e com início instantâneo.
 
 ## Quando usar
 
@@ -30,11 +26,15 @@ certificado em arquivos PEM.
 
 ## Build
 
-A partir do diretório do projeto (`projetos/hubsaude-cliente-cli`):
+A partir da raiz do projeto:
 
 ```bash
-mvn clean package
+mvn -B -ntp clean verify
+mvn -B -ntp clean verify -Pquality
 ```
+
+O primeiro comando executa testes, cobertura e verificações de ambiente. O
+perfil `quality` acrescenta Checkstyle, PMD/CPD e SpotBugs/FindSecBugs.
 
 Gera o fat-jar executável em:
 
@@ -130,8 +130,7 @@ java -jar hubsaude-cliente-cli-<versão>.jar \
 
 ### Execução em desenvolvimento (Maven)
 
-Sem empacotar o fat-jar, a partir do diretório do projeto
-(`projetos/hubsaude-cliente-cli`):
+Sem empacotar o fat JAR, a partir da raiz do projeto:
 
 ```bash
 mvn exec:java \
@@ -170,7 +169,7 @@ mvn exec:java \
 Sem `--quiet` (padrão), além do *preview* de 50 caracteres são exibidos a
 resposta do servidor de autorização (com os segredos redigidos) e as tabelas
 do *header*/*payload* do JWT. O access token **completo** só é exibido com a
-flag explícita `--show-token` (issue #813) — evite-a em CI/CD, pois o token
+flag explícita `--show-token` — evite-a em CI/CD, pois o token
 ficaria retido nos logs do pipeline.
 
 ---
@@ -213,7 +212,7 @@ técnicos (*stack trace*) são exibidos para facilitar o diagnóstico.
 ### Códigos de saída
 
 A ferramenta adota a mesma taxonomia do comando `hubsaude auth verify` do
-[`hubsaude-cli`](../hubsaude-cli) (spec §12.1), permitindo que automação
+contrato estável abaixo, permitindo que automação
 (pipelines de credenciamento, smoke-tests agendados) distinga credencial
 rejeitada de falha de rede:
 
@@ -224,7 +223,7 @@ rejeitada de falha de rede:
 | `4`    | Infraestrutura de rede — teste **inconclusivo** (discovery, timeout, 429, 5xx) | Reexecutar mais tarde (retry/backoff)   |
 | `6`    | Credencial **não apta** — rejeição determinística (HTTP 400/401 `invalid_client` ou handshake mTLS) | Acionar o processo de credenciamento |
 
-> **Mudança de contrato (pré-1.0, issue #817):** até a release `0.3.22` toda
+> **Mudança de contrato (pré-1.0):** até a release `0.3.22` toda
 > falha encerrava com exit `1`. A partir da release seguinte os códigos
 > `3`/`4`/`6` substituem o `1` — ajuste scripts que testavam `$? -eq 1`.
 >
@@ -260,54 +259,56 @@ rejeitada de falha de rede:
 
 ## Preparação de chave e certificado
 
-Para detalhes de geração e conversão de chaves/certificados (PEM, PKCS#12, ICP-Brasil), consulte o README da biblioteca: [`hubsaude-cliente-java/README.md`](../hubsaude-cliente-java/README.md).
+Para detalhes de geração e conversão de chaves/certificados (PEM, PKCS#12,
+ICP-Brasil), consulte o
+[`hubsaude-cliente-java`](https://github.com/sesgo-ti/hubsaude-cliente-java).
 
 ---
 
 ## Publicação de nova versão (release)
 
-A publicação é automatizada pelo workflow [`.github/workflows/hubsaude-cliente-cli-release.yml`](../../../.github/workflows/hubsaude-cliente-cli-release.yml) e é **disparada por tag** com o padrão `cliente-cli-v<MAJOR>.<MINOR>.<PATCH>` (convenção ADR-33). A versão publicada é derivada da tag — o `<version>` do `pom.xml` é sobrescrito apenas durante a execução do workflow (sem commit no repositório).
+A publicação é automatizada pelo workflow
+[`release.yml`](.github/workflows/release.yml) e disparada por tag no padrão
+`v<MAJOR>.<MINOR>.<PATCH>`. A versão é derivada da tag sem alterar o POM no
+repositório.
 
 **Pré-requisitos:**
 
-1. `main` (ou branch alvo) verde no workflow [`hubsaude-cliente-cli-tests.yml`](../../../.github/workflows/hubsaude-cliente-cli-tests.yml).
-2. Versão da dependência `hubsaude-cliente-java` no [`pom.xml`](pom.xml) apontando para uma release já publicada no GitHub Packages.
-3. Permissão de `packages:write` no repositório (já concedida ao `GITHUB_TOKEN` do workflow).
+1. Branch `develop` verde no workflow [`ci.yml`](.github/workflows/ci.yml).
+2. Dependência `hubsaude-cliente-java` disponível no registry configurado.
+3. Secret `HUBSAUDE_PACKAGES_TOKEN` com leitura do pacote enquanto o SDK não
+   estiver no Maven Central.
 
 **Passos para publicar uma nova versão (ex.: `0.3.1`):**
 
 ```bash
 # 1. Garanta que está na branch alvo, sincronizada com o remoto
-git checkout main
+git checkout develop
 git pull --ff-only
 
-# 2. Crie a tag semver com o prefixo cliente-cli-v
-git tag -a cliente-cli-v0.3.1 -m "Release hubsaude-cliente-cli 0.3.1"
+# 2. Crie a tag SemVer
+git tag -a v0.3.1 -m "Release hubsaude-cliente-cli 0.3.1"
 
 # 3. Empurre a tag para disparar o workflow de release
-git push origin cliente-cli-v0.3.1
+git push origin v0.3.1
 ```
 
-Acompanhe a execução em **Actions → hubsaude-cliente-cli-release** no GitHub. Ao final, o artefato estará disponível em:
-
-```
-https://maven.pkg.github.com/FabricaDeSoftwareINF/server-hubsaude
-   br.gov.go.saude.hubsaude:hubsaude-cliente-cli:0.3.1
-```
-
-**Disparo manual (excepcional, para testes):** use *Run workflow* na aba Actions informando a versão (ex.: `0.3.1-SNAPSHOT`).
+Acompanhe a execução em **Actions → Release**. O workflow publica o fat JAR,
+sources, JavaDoc e SBOM CycloneDX na GitHub Release correspondente.
 
 **Reverter uma tag publicada por engano:**
 
 ```bash
-git push --delete origin cliente-cli-v0.3.1   # remove a tag remota
-git tag -d cliente-cli-v0.3.1                 # remove a tag local
+git push --delete origin v0.3.1   # remove a tag remota
+git tag -d v0.3.1               # remove a tag local
 ```
 
-> O pacote já publicado no GitHub Packages permanece — remova-o manualmente em *Packages → hubsaude-cliente-cli* se necessário.
+> Excluir uma tag não exclui automaticamente a GitHub Release já publicada.
 
 ---
 
 ## Licença
 
-Copyright (c) 2026 SES-GO / UFG. Todos os direitos reservados.
+Apache License 2.0 — consulte [`LICENSE`](LICENSE) e [`NOTICE`](NOTICE).
+
+Copyright 2025-2026 Estado de Goiás (SES-GO) e Universidade Federal de Goiás (UFG).

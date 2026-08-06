@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2026 SES-GO / UFG
- * Todos os direitos reservados.
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025-2026 Estado de Goiás (SES-GO) e Universidade Federal de Goiás (UFG).
  */
 
 /**
@@ -17,14 +17,12 @@
  * automação), {@code JwtPayloadFormatter} e {@code SaidaConsole}
  * (apresentação legível do resultado ao operador do estabelecimento).</p>
  *
- * <h2>Null-safety (REC-09/ADR-67)</h2>
+ * <h2>Null-safety</h2>
  *
  * <p>Pacote anotado com {@link org.jspecify.annotations.NullMarked}:
  * todo tipo é <strong>não-nulo por padrão</strong>; exceções são
  * marcadas explicitamente com
- * {@link org.jspecify.annotations.Nullable}. A conformidade é
- * verificada pelo NullAway no profile Maven {@code quality} do
- * hubsaude-parent (ADR-67/ADR-80).</p>
+ * {@link org.jspecify.annotations.Nullable}.</p>
  */
 @NullMarked
 package br.gov.go.saude.hubsaude.client.cli;

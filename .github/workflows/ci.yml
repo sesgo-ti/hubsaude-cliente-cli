@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          server-id: github-hubsaude
+          server-username: GITHUB_ACTOR
+          server-password: HUBSAUDE_PACKAGES_TOKEN
+      - name: Verificar build e qualidade
+        run: mvn -B -ntp clean verify -Pquality
+        env:
+          HUBSAUDE_PACKAGES_TOKEN: ${{ secrets.HUBSAUDE_PACKAGES_TOKEN }}
+      - name: Testar JAR executável
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          java -jar "target/hubsaude-cliente-cli-${VERSION}.jar" --help
+      - name: Publicar relatórios de testes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: target/surefire-reports/
+          if-no-files-found: ignore

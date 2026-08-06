@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2026 SES-GO / UFG
- * Todos os direitos reservados.
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025-2026 Estado de Goiás (SES-GO) e Universidade Federal de Goiás (UFG).
  */
 
 package br.gov.go.saude.hubsaude.client.cli;
@@ -26,7 +26,7 @@ import br.gov.go.saude.hubsaude.client.SmartTokenException;
  * Testes unitários do fluxo de orquestração de {@link VerificarAcesso}:
  * validação dos arquivos configurados, criação do cliente pela
  * {@link ClienteToken.Fabrica}, exibição do resultado e o contrato de
- * códigos de saída 0/3/4/6 da issue #817 — usando uma fábrica fake no
+ * códigos de saída 0/3/4/6 — usando uma fábrica fake no
  * lugar do {@code SmartTokenClient} real (sem rede).
  */
 class VerificarAcessoTest {
@@ -142,7 +142,7 @@ class VerificarAcessoTest {
     }
 
     // ------------------------------------------------------------------
-    // executar: contrato de códigos de saída 0/3/4/6 (issue #817)
+    // executar: contrato de códigos de saída 0/3/4/6.
     // ------------------------------------------------------------------
 
     @Test

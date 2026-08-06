@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2026 SES-GO / UFG
- * Todos os direitos reservados.
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025-2026 Estado de Goiás (SES-GO) e Universidade Federal de Goiás (UFG).
  */
 
 package br.gov.go.saude.hubsaude.client.cli;
@@ -174,7 +174,7 @@ class JwtPayloadFormatterTest {
     @Test
     void deveDevolverObjetoComVirgulaPendenteComoFallback() {
         // Vírgula pendente é JSON inválido (RFC 8259); o parser estrito
-        // rejeita e devolve o texto bruto em linha única (#1819).
+        // rejeita e devolve o texto bruto em linha única.
         final String json = "{\"a\":1,   }";
 
         final String saida = JwtPayloadFormatter.formatAsTable(json, INDENT);
@@ -220,7 +220,7 @@ class JwtPayloadFormatterTest {
     @Test
     void deveDevolverEscapeUnicodeComHexParcialmenteValidoComoFallback() {
         // Três dígitos válidos e um inválido ("00GA"): sem conversão
-        // parcial — a entrada malformada cai no fallback bruto (#1819).
+        // parcial — a entrada malformada cai no fallback bruto.
         final String json = "{\"txt\":\"x\\u00GAy\"}";
 
         final String saida = JwtPayloadFormatter.formatAsTable(json, INDENT);

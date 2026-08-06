@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2026 SES-GO / UFG
- * Todos os direitos reservados.
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025-2026 Estado de Goiás (SES-GO) e Universidade Federal de Goiás (UFG).
  */
 
 package br.gov.go.saude.hubsaude.client.cli;
@@ -22,7 +22,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * {@link VerificarAcesso}, produzindo a {@link Config} com os valores
  * padrão aplicados.
  *
- * <p>Colaborador extraído de {@code VerificarAcesso} (issue #1034) para
+ * <p>Colaborador extraído de {@code VerificarAcesso} para
  * concentrar o parsing das flags, a validação dos parâmetros obrigatórios
  * (incluindo o contexto {@code hub_ctx}, concern
  * client-assertion-contexto-ig.md §3.4) e a leitura interativa de senha da

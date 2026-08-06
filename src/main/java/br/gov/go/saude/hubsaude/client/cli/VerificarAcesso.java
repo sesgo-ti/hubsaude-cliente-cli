@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2026 SES-GO / UFG
- * Todos os direitos reservados.
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025-2026 Estado de Goiás (SES-GO) e Universidade Federal de Goiás (UFG).
  */
 
 package br.gov.go.saude.hubsaude.client.cli;
@@ -46,8 +46,7 @@ import br.gov.go.saude.hubsaude.client.SmartTokenClient;
  * </ul>
  *
  * <h2>Códigos de saída</h2>
- * <p>A ferramenta adota a taxonomia do {@code hubsaude-cli} para o caso de
- * uso {@code auth verify} (issue #817): {@code 0} sucesso (credencial apta),
+ * <p>A ferramenta adota o seguinte contrato: {@code 0} sucesso (credencial apta),
  * {@code 3} erro de uso/configuração, {@code 4} falha de infraestrutura de
  * rede (teste inconclusivo) e {@code 6} credencial não apta (rejeição
  * determinística). Ver {@link ClassificadorFalhas}.</p>
@@ -56,8 +55,7 @@ import br.gov.go.saude.hubsaude.client.SmartTokenClient;
  * e a validação dos argumentos vivem em {@link AnalisadorArgumentos}, a
  * formatação de saída em {@link SaidaConsole}, a classificação das falhas
  * em código de saída em {@link ClassificadorFalhas} e a chamada ao
- * {@code SmartTokenClient} atrás da costura {@link ClienteToken}
- * (issue #1034).</p>
+ * {@code SmartTokenClient} atrás da costura {@link ClienteToken}.</p>
  */
 public final class VerificarAcesso {
 
@@ -77,7 +75,7 @@ public final class VerificarAcesso {
 
     /**
      * Executa o fluxo completo da CLI e decide o código de saída conforme a
-     * taxonomia da issue #817 — método puro em relação a
+     * taxonomia pública — método puro em relação a
      * {@code System.exit}, para que o contrato de códigos de saída seja
      * testável por unidade com uma {@link ClienteToken.Fabrica} fake.
      *
@@ -110,7 +108,7 @@ public final class VerificarAcesso {
 
     /**
      * Restaura a flag de interrupção quando aplicável, classifica a falha
-     * na taxonomia da issue #817 e a reporta no console com o veredito.
+     * na taxonomia pública e a reporta no console com o veredito.
      *
      * @param e falha capturada
      * @param debug se {@code true}, emite os detalhes técnicos
@@ -130,7 +128,7 @@ public final class VerificarAcesso {
      * o cliente pela fábrica dada, obtém o token e exibe o resultado.
      *
      * <p>Visibilidade de pacote para teste unitário direto do fluxo com uma
-     * {@link ClienteToken.Fabrica} fake (issue #1034), sem rede.</p>
+     * {@link ClienteToken.Fabrica} fake, sem rede.</p>
      *
      * @param config configuração parseada
      * @param fabrica fábrica do cliente de token
@@ -154,7 +152,7 @@ public final class VerificarAcesso {
 
         SaidaConsole.printInfo("Obtendo token de acesso...");
         // Latência com fonte monotônica: Instant.now() sofre saltos de
-        // NTP/relógio de parede (#1817).
+        // Relógio monotônico evita distorções por ajustes de NTP.
         final long startNanos = System.nanoTime();
 
         final SmartTokenClient.TokenResponse resposta = cliente.obterToken(config.scope);
