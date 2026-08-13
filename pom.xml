@@ -15,7 +15,7 @@
         <maven.compiler.release>21</maven.compiler.release>
         <jspecify.version>1.0.0</jspecify.version>
         <slf4j.version>2.0.18</slf4j.version>
-        <junit-jupiter.version>6.0.3</junit-jupiter.version>
+        <junit-jupiter.version>6.1.3</junit-jupiter.version>
         <assertj.version>3.27.7</assertj.version>
         <spotbugs-annotations.version>4.10.3</spotbugs-annotations.version>
         <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
