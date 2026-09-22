@@ -84,11 +84,17 @@
         <url>https://github.com/sesgo-ti/hubsaude-cliente-cli/actions</url>
     </ciManagement>
 
-    <!-- Registry legado usado temporariamente apenas para ler o SDK 0.4.0. -->
+    <!--
+        Registry Maven da organizacao `sesgo-ti` (ADR-107). O SDK
+        hubsaude-cliente-java passa a publicar aqui a partir da versao
+        0.4.1 (ver distributionManagement/release.yml daquele
+        repositorio); versoes anteriores a 0.4.1 nao existem neste
+        registry, apenas no legado FabricaDeSoftwareINF/server-hubsaude.
+    -->
     <repositories>
         <repository>
             <id>github-hubsaude</id>
-            <url>https://maven.pkg.github.com/FabricaDeSoftwareINF/server-hubsaude</url>
+            <url>https://maven.pkg.github.com/sesgo-ti/hubsaude-maven</url>
         </repository>
     </repositories>
 
