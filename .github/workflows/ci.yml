@@ -37,7 +37,7 @@ jobs:
           java -jar "target/hubsaude-cliente-cli-${VERSION}.jar" --help
       - name: Publicar relatórios de testes
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-reports
           path: target/surefire-reports/
