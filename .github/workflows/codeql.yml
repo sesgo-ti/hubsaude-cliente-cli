@@ -11,7 +11,6 @@ on:
 permissions:
   contents: read
   security-events: write
-  packages: read
 
 jobs:
   analyze:
@@ -21,16 +20,13 @@ jobs:
       - uses: github/codeql-action/init@v4
         with:
           languages: java-kotlin
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
-          server-id: github-hubsaude
-          server-username: GITHUB_ACTOR
-          server-password: HUBSAUDE_PACKAGES_TOKEN
+      - uses: sesgo-ti/.github/.github/actions/setup-maven@v1
+        env:
+          MAVEN_ACTOR: ${{ github.actor }}
+          MAVEN_TOKEN: ${{ secrets.HUBSAUDE_MAVEN_READ_TOKEN }}
       - name: Compilar
         run: mvn -B -ntp clean package -DskipTests
         env:
-          HUBSAUDE_PACKAGES_TOKEN: ${{ secrets.HUBSAUDE_PACKAGES_TOKEN }}
+          MAVEN_ACTOR: ${{ github.actor }}
+          MAVEN_TOKEN: ${{ secrets.HUBSAUDE_MAVEN_READ_TOKEN }}
       - uses: github/codeql-action/analyze@v4

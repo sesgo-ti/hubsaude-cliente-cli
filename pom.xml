@@ -84,13 +84,9 @@
         <url>https://github.com/sesgo-ti/hubsaude-cliente-cli/actions</url>
     </ciManagement>
 
-    <!-- Registry legado usado temporariamente apenas para ler o SDK 0.4.0. -->
-    <repositories>
-        <repository>
-            <id>github-hubsaude</id>
-            <url>https://maven.pkg.github.com/FabricaDeSoftwareINF/server-hubsaude</url>
-        </repository>
-    </repositories>
+    <!-- Repositórios de LEITURA ficam no ~/.m2/settings.xml, nunca no POM. No CI,
+         a action central sesgo-ti/.github setup-maven configura sesgo-ti/hubsaude-maven
+         e FabricaDeSoftwareINF/server-hubsaude (onde está hubsaude-cliente-java 0.4.0). -->
 
     <!-- Alinha Jackson à versão transitiva do hubsaude-cliente-java. -->
     <dependencyManagement>
