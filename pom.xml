@@ -84,9 +84,8 @@
         <url>https://github.com/sesgo-ti/hubsaude-cliente-cli/actions</url>
     </ciManagement>
 
-    <!-- Repositórios de LEITURA ficam no ~/.m2/settings.xml, nunca no POM. No CI,
-         a action central sesgo-ti/.github setup-maven configura sesgo-ti/hubsaude-maven
-         e FabricaDeSoftwareINF/server-hubsaude (onde está hubsaude-cliente-java 0.4.0). -->
+    <!-- hubsaude-cliente-java 0.4.0 vem de FabricaDeSoftwareINF/server-hubsaude,
+         configurado no settings.xml (no CI, pela action setup-maven central). -->
 
     <!-- Alinha Jackson à versão transitiva do hubsaude-cliente-java. -->
     <dependencyManagement>
