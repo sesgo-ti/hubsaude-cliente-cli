@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: sesgo-ti/.github/.github/actions/setup-maven@v1
+      - uses: sesgo-ti/.github/.github/actions/setup-maven@4162afa0ed30ad31cc2f18d3422d7202702be17c # v1.0.0
         env:
           MAVEN_ACTOR: ${{ github.actor }}
           MAVEN_TOKEN: ${{ secrets.HUBSAUDE_MAVEN_READ_TOKEN }}
