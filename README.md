@@ -277,8 +277,7 @@ repositório.
 1. Branch `develop` verde no workflow [`ci.yml`](.github/workflows/ci.yml).
 2. Dependência `hubsaude-cliente-java` disponível no registry configurado.
 3. Secret `HUBSAUDE_MAVEN_READ_TOKEN` (escopos Actions **e** Dependabot) com
-   leitura do pacote enquanto o SDK não estiver no Maven Central. Catálogo:
-   `sesgo-ti/.github/catalogo/segredos.tsv`.
+   leitura do pacote enquanto o SDK não estiver no Maven Central.
 
 **Passos para publicar uma nova versão (ex.: `0.3.1`):**
 
