@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  packages: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,18 +18,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
-          server-id: github-hubsaude
-          server-username: GITHUB_ACTOR
-          server-password: HUBSAUDE_PACKAGES_TOKEN
+      - uses: sesgo-ti/.github/.github/actions/setup-maven@4162afa0ed30ad31cc2f18d3422d7202702be17c # v1.0.0
+        env:
+          MAVEN_ACTOR: ${{ github.actor }}
+          MAVEN_TOKEN: ${{ secrets.HUBSAUDE_MAVEN_READ_TOKEN }}
       - name: Verificar build e qualidade
         run: mvn -B -ntp clean verify -Pquality
         env:
-          HUBSAUDE_PACKAGES_TOKEN: ${{ secrets.HUBSAUDE_PACKAGES_TOKEN }}
+          MAVEN_ACTOR: ${{ github.actor }}
+          MAVEN_TOKEN: ${{ secrets.HUBSAUDE_MAVEN_READ_TOKEN }}
       - name: Testar JAR executável
         run: |
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)

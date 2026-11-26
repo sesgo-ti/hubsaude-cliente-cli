@@ -1,7 +1,23 @@
 version: 2
+# PRs do Dependabot só enxergam segredos de DEPENDABOT (não os de Actions):
+# HUBSAUDE_MAVEN_READ_TOKEN precisa existir também nesse escopo.
+registries:
+  hubsaude-maven:
+    type: maven-repository
+    url: https://maven.pkg.github.com/sesgo-ti/hubsaude-maven
+    username: x-access-token
+    password: ${{ secrets.HUBSAUDE_MAVEN_READ_TOKEN }}
+  hubsaude-origem:
+    type: maven-repository
+    url: https://maven.pkg.github.com/FabricaDeSoftwareINF/server-hubsaude
+    username: x-access-token
+    password: ${{ secrets.HUBSAUDE_MAVEN_READ_TOKEN }}
 updates:
   - package-ecosystem: maven
     directory: /
+    registries:
+      - hubsaude-maven
+      - hubsaude-origem
     target-branch: develop
     schedule:
       interval: weekly
